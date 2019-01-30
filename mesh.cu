@@ -36,18 +36,20 @@ __host__ __device__ cartCoord& cartCoord::operator=(const cartCoord &rhs) {
     return *this;
 }
 
-__host__ __device__ cartCoord& cartCoord::operator+(const cartCoord &rhs) {
-    coords[0] = coords[0] + rhs.coords[0];
-    coords[1] = coords[1] + rhs.coords[1];
-    coords[2] = coords[2] + rhs.coords[2];
-    return *this;
+__host__ __device__ cartCoord cartCoord::operator+(const cartCoord &rhs) const {
+    cartCoord temp;
+    temp.coords[0] = coords[0] + rhs.coords[0];
+    temp.coords[1] = coords[1] + rhs.coords[1];
+    temp.coords[2] = coords[2] + rhs.coords[2];
+    return temp;
 }
 
-__host__ __device__ cartCoord& cartCoord::operator-(const cartCoord &rhs) {
-    coords[0] = coords[0] - rhs.coords[0];
-    coords[1] = coords[1] - rhs.coords[1];
-    coords[2] = coords[2] - rhs.coords[2];
-    return *this;
+__host__ __device__ cartCoord cartCoord::operator-(const cartCoord &rhs) const {
+    cartCoord temp;
+    temp.coords[0] = coords[0] - rhs.coords[0];
+    temp.coords[1] = coords[1] - rhs.coords[1];
+    temp.coords[2] = coords[2] - rhs.coords[2];
+    return temp;
 }
 
 __host__ __device__ cartCoord pntDvd(const cartCoord &pnt, const float lambda) {
@@ -63,8 +65,13 @@ __host__ __device__ cartCoord pntMul(const float lambda, const cartCoord &pnt) {
     return cartCoord(lambda*pnt.coords[0],lambda*pnt.coords[1],lambda*pnt.coords[2]);
 }
 
-__host__ __device__ float cartCoord::norm(const cartCoord v) {
-    return sqrtf(powf(v.coords[0],2)+powf(v.coords[1],2)+powf(v.coords[2],2));
+__host__ __device__ float cartCoord::norm() {
+    return sqrtf(powf(coords[0],2)+powf(coords[1],2)+powf(coords[2],2));
+}
+
+__host__ __device__ cuFloatComplex green2(const float k, const cartCoord x, const cartCoord y) {
+    float r = (x-y).norm();
+    return green(k,r);
 }
 
 //triangular element class
@@ -229,5 +236,35 @@ ostream& operator<<(ostream &out, const mesh &rhs) {
     return out;
 }
 
+//cartCoord2D
+__host__ __device__ cartCoord2D::cartCoord2D(const cartCoord2D &rhs) {
+    coords[0] = rhs.coords[0];
+    coords[1] = rhs.coords[1];
+}
+
+__host__ __device__ cartCoord2D& cartCoord2D::operator=(const cartCoord2D &rhs) {
+    coords[0] = rhs.coords[0];
+    coords[1] = rhs.coords[1];
+    return *this;
+}
+
+__host__ __device__ void cartCoord2D::set(const float x, const float y) {
+    coords[0] = x;
+    coords[1] = y;
+}
+
+__host__ __device__ cartCoord2D cartCoord2D::operator+(const cartCoord2D &rhs) const {
+    cartCoord2D temp;
+    temp.coords[0] = coords[0] + rhs.coords[0];
+    temp.coords[1] = coords[1] + rhs.coords[1];
+    return temp;
+}
+
+__host__ __device__ cartCoord2D cartCoord2D::operator-(const cartCoord2D &rhs) const {
+    cartCoord2D temp;
+    temp.coords[0] = coords[0] - rhs.coords[0];
+    temp.coords[1] = coords[1] - rhs.coords[1];
+    return temp;
+}
 
 

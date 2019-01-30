@@ -11,6 +11,24 @@ ostream& operator<<(ostream &out, const cuFloatComplex &rhs) {
     return out;
 }
 
+__host__ __device__ cuFloatComplex angExpf(const float theta) {
+    return make_cuFloatComplex(cosf(theta),sinf(theta));
+}
+
+__host__ __device__ cuFloatComplex expfc(const cuFloatComplex z) {
+    cuFloatComplex ans;
+    float zr = cuCrealf(z), zi = cuCimagf(z);
+    ans = make_cuFloatComplex(exp(zr)*cosf(zi),exp(zr)*sinf(zi));
+    return ans;
+}
+
+__host__ __device__ cuFloatComplex green(const float k, const float r) {
+    float y = 4*PI*r;
+    cuFloatComplex x = angExpf(-k*r);
+    return make_cuFloatComplex(cuCrealf(x)/y,cuCimagf(x)/y);
+}
+
+
 __host__ __device__ void printComplexMatrix(cuFloatComplex *A, const int row, const int col, 
         const int lda) {
 	float x, y;

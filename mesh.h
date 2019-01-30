@@ -24,6 +24,7 @@ class cartCoord {
     friend ostream& operator<<(ostream&,const cartCoord&);
     friend __host__ __device__ cartCoord pntDvd(const cartCoord&,const float);
     friend __host__ __device__ cartCoord pntMul(const float,const cartCoord&);
+    friend __host__ __device__ cuFloatComplex green2(const float,const cartCoord,const cartCoord);
     
     friend class mesh;
 private:
@@ -36,10 +37,10 @@ public:
     __host__ __device__ cartCoord& operator=(const cartCoord&);
     ~cartCoord() = default;
     __host__ __device__ void set(const float,const float,const float);
-    __host__ __device__ cartCoord& operator+(const cartCoord&);
-    __host__ __device__ cartCoord& operator-(const cartCoord&);
+    __host__ __device__ cartCoord operator+(const cartCoord&) const;
+    __host__ __device__ cartCoord operator-(const cartCoord&) const;
     __host__ __device__ void print() {printf("(%f,%f,%f)\n",coords[0],coords[1],coords[2]);}
-    __host__ __device__ float norm(const cartCoord);
+    __host__ __device__ float norm();
 };
 
 ostream& operator<<(ostream&,const cartCoord&);
@@ -47,6 +48,8 @@ ostream& operator<<(ostream&,const cartCoord&);
 __host__ __device__ cartCoord pntDvd(const cartCoord&,const float);
 
 __host__ __device__ cartCoord pntMul(const float,const cartCoord&);
+
+__host__ __device__ cuFloatComplex green(const cartCoord&,const cartCoord&);
 
 //class triElem
 class triElem {
@@ -83,6 +86,22 @@ public:
 };
 
 ostream& operator<<(ostream&,const mesh&);
+
+class cartCoord2D {
+private:
+    float coords[2];
+    
+public:
+    __host__ __device__ cartCoord2D() {coords[0]=0;coords[1]=0;}
+    __host__ __device__ cartCoord2D(const cartCoord2D&);
+    __host__ __device__ cartCoord2D(const float x,const float y) {coords[0]=x;coords[1]=y;}
+    ~cartCoord2D() = default;
+    __host__ __device__ cartCoord2D& operator=(const cartCoord2D&);
+    __host__ __device__ void set(const float,const float);
+    __host__ __device__ cartCoord2D operator+(const cartCoord2D&) const;
+    __host__ __device__ cartCoord2D operator-(const cartCoord2D&) const;
+    __host__ __device__ void print() {printf("(%f,%f)\n",coords[0],coords[1]);}
+};
 
 
 

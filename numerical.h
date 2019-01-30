@@ -20,6 +20,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include "device_launch_parameters.h"
+#include "mesh.h"
 #include <algorithm>
 #include <vector>
 
@@ -29,6 +30,18 @@
 #include <gsl/gsl_complex_math.h>
 #include <gsl/gsl_blas.h>
 using namespace std;
+
+#ifndef PI
+#define PI 3.1415926535897932
+#endif
+
+#ifndef IMPGQORDER
+#define IMPGQORDER 7 //number of integration points for improper integration
+#endif
+
+#ifndef PGQORDER
+#define PGQORDER 7 //number of integration points or proper integration
+#endif
 
 #ifndef IDXC0
 #define IDXC0(row,col,ld) ((ld)*(col)+(row))
@@ -51,6 +64,12 @@ return EXIT_FAILURE;}} while(0)
 
 __host__ __device__ void printComplexMatrix(cuFloatComplex*,const int,const int col,const int); 
 
+__host__ __device__ cuFloatComplex angExpf(const float);
+
+__host__ __device__ cuFloatComplex expfc(const cuFloatComplex);
+
+__host__ __device__ cuFloatComplex green(const float,const float);
+
 ostream& operator<<(ostream&,const cuFloatComplex&);
 
 //class gaussQuad
@@ -59,6 +78,7 @@ class gaussQuad {
 private:
     float *evalPnts = NULL;
     float *wgts = NULL;
+    
     int n; //order of integration
     
     int genGaussParams();
