@@ -4,9 +4,29 @@
  * and open the template in the editor.
  */
 #include "numerical.h"
+#include "mesh.h"
+
+ostream& operator<<(ostream &out, const cuFloatComplex &rhs) {
+    out << "(" << cuCrealf(rhs) << "," << cuCimagf(rhs) << ")";
+    return out;
+}
+
+__host__ __device__ void printComplexMatrix(cuFloatComplex *A, const int row, const int col, 
+        const int lda) {
+	float x, y;
+	int i, j;
+	for (i = 0;i < row;i++) {
+		for (j = 0;j < col;j++) {
+			x = cuCrealf(A[IDXC0(i, j, lda)]);
+			y = cuCimagf(A[IDXC0(i, j, lda)]);
+			printf("(%f,%f) ", x, y);
+		}
+		printf("\n");
+	}		
+}
 
 
-//Gaussian points generation
+//Gaussian cartCoords generation
 gaussQuad::gaussQuad(const gaussQuad &rhs) {
     n = rhs.n;
     if(evalPnts != NULL) {
@@ -111,47 +131,4 @@ ostream& operator<<(ostream &out, const gaussQuad &rhs) {
         out << rhs.wgts[i] << " ";
     }
     return out;
-}
-
-
-//point class functions
-point::point(const point &rhs) {
-    for(int i=0;i<3;i++) {
-        coords[i] = rhs.coords[i];
-    }
-}
-
-void point::set(const float x, const float y, const float z) {
-    coords[0] = x;
-    coords[1] = y;
-    coords[2] = z;
-}
-
-ostream& operator<<(ostream &out,const point &rhs) {
-    out << "(" << rhs.coords[0] << "," << rhs.coords[1] << "," << rhs.coords[2] 
-            << ")" << endl;
-    return out;
-}
-
-point& point::operator=(const point &rhs) {
-    coords[0] = rhs.coords[0];
-    coords[1] = rhs.coords[1];
-    coords[2] = rhs.coords[2];
-    return *this;
-}
-
-//triangular element class
-triElem::triElem(const triElem &rhs) {
-    for(int i=0;i<3;i++) {
-        nodes[i] = rhs.nodes[i];
-        bc[i] = rhs.bc[i];
-    }
-}
-
-triElem& triElem::operator=(const triElem &rhs) {
-    for(int i=0;i<3;i++) {
-        nodes[i] = rhs.nodes[i];
-        bc[i] = rhs.bc[i];
-    }
-    return *this;
 }

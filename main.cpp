@@ -13,13 +13,16 @@
 
 #include <cstdlib>
 
+#include "numerical.h"
+#include "mesh.h"
+
 using namespace std;
 
-/*
- * 
- */
 int main(int argc, char** argv) {
-
+    gaussQuad g(7);
+    cout << g << endl;
+    
+    
     return 0;
 }
 

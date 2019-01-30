@@ -20,6 +20,8 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include "device_launch_parameters.h"
+#include <algorithm>
+#include <vector>
 
 #include <gsl/gsl_sf.h>
 //#include <gsl/gsl_math.h>
@@ -47,9 +49,13 @@ printf("Error at %s:%d\n",__FILE__,__LINE__);\
 return EXIT_FAILURE;}} while(0)
 #endif
 
+__host__ __device__ void printComplexMatrix(cuFloatComplex*,const int,const int col,const int); 
+
+ostream& operator<<(ostream&,const cuFloatComplex&);
+
 //class gaussQuad
 class gaussQuad {
-    friend ostream& operator<<(ostream&, const gaussQuad&);
+    friend ostream& operator<<(ostream&,const gaussQuad&);
 private:
     float *evalPnts = NULL;
     float *wgts = NULL;
@@ -70,34 +76,7 @@ public:
     
 };
 
-//class point
-class point {
-    friend ostream& operator<<(ostream&,const point&);
-private:
-    float coords[3];
 
-public:
-    point() {coords[0]=0;coords[1]=0;coords[2]=0;}
-    point(const point&);
-    point& operator=(const point&);
-    ~point() = default;
-    void set(const float,const float,const float);
-};
-
-ostream& operator<<(ostream&,const point&);
-
-//class triElem
-class triElem {
-private:
-    int nodes[3];
-    cuFloatComplex bc[3];
-    
-public:
-    triElem() = default;
-    triElem(const triElem&);
-    ~triElem() = default;
-    triElem& operator=(const triElem&);
-};
 
 #endif /* NUMERICAL_H */
 
