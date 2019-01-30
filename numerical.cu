@@ -115,6 +115,12 @@ ostream& operator<<(ostream &out, const gaussQuad &rhs) {
 
 
 //point class functions
+point::point(const point &rhs) {
+    for(int i=0;i<3;i++) {
+        coords[i] = rhs.coords[i];
+    }
+}
+
 void point::set(const float x, const float y, const float z) {
     coords[0] = x;
     coords[1] = y;
@@ -131,5 +137,21 @@ point& point::operator=(const point &rhs) {
     coords[0] = rhs.coords[0];
     coords[1] = rhs.coords[1];
     coords[2] = rhs.coords[2];
+    return *this;
+}
+
+//triangular element class
+triElem::triElem(const triElem &rhs) {
+    for(int i=0;i<3;i++) {
+        nodes[i] = rhs.nodes[i];
+        bc[i] = rhs.bc[i];
+    }
+}
+
+triElem& triElem::operator=(const triElem &rhs) {
+    for(int i=0;i<3;i++) {
+        nodes[i] = rhs.nodes[i];
+        bc[i] = rhs.bc[i];
+    }
     return *this;
 }
