@@ -5,6 +5,8 @@
  */
 #include "numerical.h"
 
+
+//Gaussian points generation
 gaussQuad::gaussQuad(const gaussQuad &rhs) {
     n = rhs.n;
     if(evalPnts != NULL) {
@@ -111,3 +113,23 @@ ostream& operator<<(ostream &out, const gaussQuad &rhs) {
     return out;
 }
 
+
+//point class functions
+void point::set(const float x, const float y, const float z) {
+    coords[0] = x;
+    coords[1] = y;
+    coords[2] = z;
+}
+
+ostream& operator<<(ostream &out,const point &rhs) {
+    out << "(" << rhs.coords[0] << "," << rhs.coords[1] << "," << rhs.coords[2] 
+            << ")" << endl;
+    return out;
+}
+
+point& point::operator=(const point &rhs) {
+    coords[0] = rhs.coords[0];
+    coords[1] = rhs.coords[1];
+    coords[2] = rhs.coords[2];
+    return *this;
+}

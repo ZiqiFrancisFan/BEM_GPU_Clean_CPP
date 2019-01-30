@@ -69,6 +69,19 @@ public:
     
 };
 
+class point {
+    friend ostream& operator<<(ostream&,const point&);
+private:
+    float coords[3];
+
+public:
+    point() {coords[0]=0;coords[1]=0;coords[2]=0;}
+    point& operator=(const point&);
+    ~point() = default;
+    void set(const float,const float,const float);
+};
+
+ostream& operator<<(ostream&,const point&);
 
 #endif /* NUMERICAL_H */
 
