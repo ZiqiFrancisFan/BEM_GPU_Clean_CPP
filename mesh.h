@@ -19,12 +19,17 @@
 
 using namespace std;
 
+class cartCoord2D;
+
 //class cartCoord
 class cartCoord {
     friend ostream& operator<<(ostream&,const cartCoord&);
-    friend __host__ __device__ cartCoord pntDvd(const cartCoord&,const float);
-    friend __host__ __device__ cartCoord pntMul(const float,const cartCoord&);
+    friend __host__ __device__ cartCoord pntNumDvd(const cartCoord&,const float);
+    friend __host__ __device__ cartCoord numPntMul(const float,const cartCoord&);
     friend __host__ __device__ cuFloatComplex green2(const float,const cartCoord,const cartCoord);
+    friend __host__ __device__ float Psi_L(const cartCoord);
+    friend __host__ __device__ cartCoord tf2DTo3D(const cartCoord,const cartCoord,
+        const cartCoord,const cartCoord2D);
     
     friend class mesh;
 private:
@@ -40,16 +45,18 @@ public:
     __host__ __device__ cartCoord operator+(const cartCoord&) const;
     __host__ __device__ cartCoord operator-(const cartCoord&) const;
     __host__ __device__ void print() {printf("(%f,%f,%f)\n",coords[0],coords[1],coords[2]);}
-    __host__ __device__ float norm();
+    __host__ __device__ float norm() const;
 };
 
 ostream& operator<<(ostream&,const cartCoord&);
 
-__host__ __device__ cartCoord pntDvd(const cartCoord&,const float);
+__host__ __device__ cartCoord pntNumDvd(const cartCoord&,const float);
 
-__host__ __device__ cartCoord pntMul(const float,const cartCoord&);
+__host__ __device__ cartCoord numPntMul(const float,const cartCoord&);
 
 __host__ __device__ cuFloatComplex green(const cartCoord&,const cartCoord&);
+
+__host__ __device__ float Psi_L(const cartCoord);
 
 //class triElem
 class triElem {
@@ -88,6 +95,20 @@ public:
 ostream& operator<<(ostream&,const mesh&);
 
 class cartCoord2D {
+    friend __host__ __device__ cartCoord2D pntNumDvd(const cartCoord2D&,const float);
+    friend __host__ __device__ cartCoord2D numPntMul(const float,const cartCoord2D&);
+    friend __host__ __device__ float N_1(const cartCoord2D);
+    friend __host__ __device__ float N_2(const cartCoord2D);
+    friend __host__ __device__ float N_3(const cartCoord2D);
+    friend __host__ __device__ float pN1pXi1(const cartCoord2D);
+    friend __host__ __device__ float pN1pXi2(const cartCoord2D);
+    friend __host__ __device__ float pN2pXi1(const cartCoord2D);
+    friend __host__ __device__ float pN2pXi2(const cartCoord2D);
+    friend __host__ __device__ float pN3pXi1(const cartCoord2D);
+    friend __host__ __device__ float pN3pXi2(const cartCoord2D);
+    friend __host__ __device__ cartCoord tf2DTo3D(const cartCoord,const cartCoord,
+        const cartCoord,const cartCoord2D);
+    
 private:
     float coords[2];
     
@@ -103,6 +124,30 @@ public:
     __host__ __device__ void print() {printf("(%f,%f)\n",coords[0],coords[1]);}
 };
 
+__host__ __device__ cartCoord2D pntNumDvd(const cartCoord2D&,const float);
+
+__host__ __device__ cartCoord2D numPntMul(const float,const cartCoord2D&);
+
+__host__ __device__ float N_1(const cartCoord2D);
+
+__host__ __device__ float N_2(const cartCoord2D);
+
+__host__ __device__ float N_3(const cartCoord2D);
+
+__host__ __device__ float pN1pXi1(const cartCoord2D);
+
+__host__ __device__ float pN1pXi2(const cartCoord2D);
+
+__host__ __device__ float pN2pXi1(const cartCoord2D);
+
+__host__ __device__ float pN2pXi2(const cartCoord2D);
+
+__host__ __device__ float pN3pXi1(const cartCoord2D);
+
+__host__ __device__ float pN3pXi2(const cartCoord2D);
+
+__host__ __device__ cartCoord tf2DTo3D(const cartCoord,const cartCoord,
+        const cartCoord,const cartCoord2D);
 
 
 

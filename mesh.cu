@@ -52,7 +52,7 @@ __host__ __device__ cartCoord cartCoord::operator-(const cartCoord &rhs) const {
     return temp;
 }
 
-__host__ __device__ cartCoord pntDvd(const cartCoord &pnt, const float lambda) {
+__host__ __device__ cartCoord pntNumDvd(const cartCoord &pnt, const float lambda) {
     if(lambda == 0) {
         printf("divisor cannot be 0.\n");
         return cartCoord(0,0,0);
@@ -61,11 +61,11 @@ __host__ __device__ cartCoord pntDvd(const cartCoord &pnt, const float lambda) {
     }
 }
 
-__host__ __device__ cartCoord pntMul(const float lambda, const cartCoord &pnt) {
+__host__ __device__ cartCoord numPntMul(const float lambda, const cartCoord &pnt) {
     return cartCoord(lambda*pnt.coords[0],lambda*pnt.coords[1],lambda*pnt.coords[2]);
 }
 
-__host__ __device__ float cartCoord::norm() {
+__host__ __device__ float cartCoord::norm() const {
     return sqrtf(powf(coords[0],2)+powf(coords[1],2)+powf(coords[2],2));
 }
 
@@ -267,4 +267,62 @@ __host__ __device__ cartCoord2D cartCoord2D::operator-(const cartCoord2D &rhs) c
     return temp;
 }
 
+__host__ __device__ cartCoord2D pntNumDvd(const cartCoord2D &dividend, 
+        const float divisor) {
+    if(divisor == 0) {
+        printf("divisor cannot be 0.\n");
+        return cartCoord2D(0,0);
+    } else {
+        return cartCoord2D(dividend.coords[0]/divisor,dividend.coords[1]/divisor);
+    }
+}
+
+__host__ __device__ cartCoord2D numPntMul(const float lambda, const cartCoord2D &pnt) {
+    return cartCoord2D(lambda*pnt.coords[0],lambda*pnt.coords[1]);
+}
+
+__host__ __device__ float Psi_L(const cartCoord pnt) {
+    return 1.0/(4*PI*pnt.norm());
+}
+
+__host__ __device__ float N_1(const cartCoord2D pnt) {
+    return pnt.coords[0];
+}
+
+__host__ __device__ float N_2(const cartCoord2D pnt) {
+    return pnt.coords[1];
+}
+
+__host__ __device__ float N_3(const cartCoord2D pnt) {
+    return 1-pnt.coords[0]-pnt.coords[1];
+}
+
+__host__ __device__ float pN1pXi1(const cartCoord2D pnt) {
+    return 1.0;
+}
+
+__host__ __device__ float pN1pXi2(const cartCoord2D pnt) {
+    return 0;
+}
+
+__host__ __device__ float pN2pXi1(const cartCoord2D pnt) {
+    return 0;
+}
+
+__host__ __device__ float pN2pXi2(const cartCoord2D pnt) {
+    return 1.0;
+}
+
+__host__ __device__ float pN3pXi1(const cartCoord2D pnt) {
+    return -1.0;
+}
+
+__host__ __device__ float pN3pXi2(const cartCoord2D pnt) {
+    return -1.0;
+}
+
+__host__ __device__ cartCoord tf2DTo3D(const cartCoord pnt1,const cartCoord pnt2,
+        const cartCoord pnt3, const cartCoord2D localPnt) {
+    return numPntMul(N_1(localPnt),pnt1)+numPntMul(N_2(localPnt),pnt2)+numPntMul(N_3(localPnt),pnt3); 
+}
 
