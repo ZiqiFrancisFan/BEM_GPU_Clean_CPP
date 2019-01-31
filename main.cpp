@@ -21,9 +21,9 @@
 using namespace std;
 
 int main(int argc, char** argv) {
-    cartCoord c1(1,0,0), c2(0,1,0), c3(0,0,1);
+    cartCoord c1(1,2,3), c2(3,2,1), c3(0,0,1);
     cartCoord2D c(1,0);
-    cout << tf2DTo3D(c1,c2,c3,c) << endl;
+    cout << c1*c2 << endl;
     
     return 0;
 }

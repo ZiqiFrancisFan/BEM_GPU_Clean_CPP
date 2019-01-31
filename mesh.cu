@@ -52,6 +52,18 @@ __host__ __device__ cartCoord cartCoord::operator-(const cartCoord &rhs) const {
     return temp;
 }
 
+__host__ __device__ cartCoord cartCoord::operator*(const cartCoord &rhs) const {
+    cartCoord prod;
+    prod.coords[0] = coords[1]*rhs.coords[2]-coords[2]*rhs.coords[1];
+    prod.coords[1] = coords[2]*rhs.coords[0]-coords[0]*rhs.coords[2];
+    prod.coords[2] = coords[0]*rhs.coords[1]-coords[1]*rhs.coords[0];
+    return prod;
+}
+
+__host__ __device__ float dotProd(const cartCoord &p1,const cartCoord &p2) {
+    return p1.coords[0]*p2.coords[0]+p1.coords[1]*p2.coords[1]+p1.coords[2]*p2.coords[2];
+}
+
 __host__ __device__ cartCoord pntNumDvd(const cartCoord &pnt, const float lambda) {
     if(lambda == 0) {
         printf("divisor cannot be 0.\n");
@@ -65,13 +77,17 @@ __host__ __device__ cartCoord numPntMul(const float lambda, const cartCoord &pnt
     return cartCoord(lambda*pnt.coords[0],lambda*pnt.coords[1],lambda*pnt.coords[2]);
 }
 
-__host__ __device__ float cartCoord::norm() const {
+__host__ __device__ float cartCoord::nrm2() const {
     return sqrtf(powf(coords[0],2)+powf(coords[1],2)+powf(coords[2],2));
 }
 
 __host__ __device__ cuFloatComplex green2(const float k, const cartCoord x, const cartCoord y) {
-    float r = (x-y).norm();
+    float r = (x-y).nrm2();
     return green(k,r);
+}
+
+__host__ __device__ float trnglArea(const cartCoord p1, const cartCoord p2) {
+    return (p1*p2).nrm2();
 }
 
 //triangular element class
@@ -282,7 +298,7 @@ __host__ __device__ cartCoord2D numPntMul(const float lambda, const cartCoord2D 
 }
 
 __host__ __device__ float Psi_L(const cartCoord pnt) {
-    return 1.0/(4*PI*pnt.norm());
+    return 1.0/(4*PI*pnt.nrm2());
 }
 
 __host__ __device__ float N_1(const cartCoord2D pnt) {
@@ -323,6 +339,7 @@ __host__ __device__ float pN3pXi2(const cartCoord2D pnt) {
 
 __host__ __device__ cartCoord tf2DTo3D(const cartCoord pnt1,const cartCoord pnt2,
         const cartCoord pnt3, const cartCoord2D localPnt) {
-    return numPntMul(N_1(localPnt),pnt1)+numPntMul(N_2(localPnt),pnt2)+numPntMul(N_3(localPnt),pnt3); 
+    return numPntMul(N_1(localPnt),pnt1)+numPntMul(N_2(localPnt),pnt2)
+            +numPntMul(N_3(localPnt),pnt3); 
 }
 

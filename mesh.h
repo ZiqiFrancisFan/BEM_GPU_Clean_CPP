@@ -26,10 +26,12 @@ class cartCoord {
     friend ostream& operator<<(ostream&,const cartCoord&);
     friend __host__ __device__ cartCoord pntNumDvd(const cartCoord&,const float);
     friend __host__ __device__ cartCoord numPntMul(const float,const cartCoord&);
+    friend __host__ __device__ float dotProd(const cartCoord&,const cartCoord&);
     friend __host__ __device__ cuFloatComplex green2(const float,const cartCoord,const cartCoord);
     friend __host__ __device__ float Psi_L(const cartCoord);
     friend __host__ __device__ cartCoord tf2DTo3D(const cartCoord,const cartCoord,
         const cartCoord,const cartCoord2D);
+    friend __host__ __device__ float trnglArea(const cartCoord,const cartCoord);
     
     friend class mesh;
 private:
@@ -44,8 +46,9 @@ public:
     __host__ __device__ void set(const float,const float,const float);
     __host__ __device__ cartCoord operator+(const cartCoord&) const;
     __host__ __device__ cartCoord operator-(const cartCoord&) const;
+    __host__ __device__ cartCoord operator*(const cartCoord&) const;
     __host__ __device__ void print() {printf("(%f,%f,%f)\n",coords[0],coords[1],coords[2]);}
-    __host__ __device__ float norm() const;
+    __host__ __device__ float nrm2() const;
 };
 
 ostream& operator<<(ostream&,const cartCoord&);
@@ -54,9 +57,13 @@ __host__ __device__ cartCoord pntNumDvd(const cartCoord&,const float);
 
 __host__ __device__ cartCoord numPntMul(const float,const cartCoord&);
 
+__host__ __device__ float dotProd(const cartCoord&,const cartCoord&);
+
 __host__ __device__ cuFloatComplex green(const cartCoord&,const cartCoord&);
 
 __host__ __device__ float Psi_L(const cartCoord);
+
+__host__ __device__ float trnglArea(const cartCoord,const cartCoord);
 
 //class triElem
 class triElem {
