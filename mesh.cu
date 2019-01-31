@@ -337,7 +337,7 @@ __host__ __device__ float pN3pXi2(const cartCoord2D pnt) {
     return -1.0;
 }
 
-__host__ __device__ cartCoord tf2DTo3D(const cartCoord pnt1, const cartCoord pnt2,
+__host__ __device__ cartCoord xiToRv(const cartCoord pnt1, const cartCoord pnt2,
         const cartCoord pnt3, const cartCoord2D localPnt) {
     return numPntMul(N_1(localPnt),pnt1)+numPntMul(N_2(localPnt),pnt2)
             +numPntMul(N_3(localPnt),pnt3); 
@@ -346,4 +346,32 @@ __host__ __device__ cartCoord tf2DTo3D(const cartCoord pnt1, const cartCoord pnt
 __host__ __device__ cartCoord pRvpXi1TimespRvpXi2(const cartCoord pnt1, const cartCoord pnt2, 
         const cartCoord pnt3) {
     return (pnt1-pnt3)*(pnt2-pnt3);
+}
+
+__host__ __device__ cartCoord2D etaToRhoTheta(const cartCoord2D s) {
+    cartCoord2D temp;
+    temp.coords[0] = 0.5+0.5*s.coords[0];
+    temp.coords[1] = 0.5+0.5*s.coords[1];
+    return temp;
+}
+
+__host__ __device__ cartCoord2D rhoThetaToXi_3(const cartCoord2D s) {
+    cartCoord2D temp;
+    temp.coords[0] = s.coords[0]*(1-s.coords[1]); //rho*(1-theta)
+    temp.coords[1] = s.coords[0]*s.coords[1];
+    return temp;
+}
+
+__host__ __device__ cartCoord2D rhoThetaToXi_1(const cartCoord2D s) {
+    cartCoord2D temp;
+    temp.coords[0] = 1-s.coords[0];
+    temp.coords[1] = s.coords[0]*(1-s.coords[1]);
+    return temp;
+}
+
+__host__ __device__ cartCoord2D rhoThetaToXi_2(const cartCoord2D s) {
+    cartCoord2D  temp;
+    temp.coords[0] = s.coords[0]*s.coords[1];
+    temp.coords[1] = 1-s.coords[0];
+    return temp;
 }

@@ -21,9 +21,7 @@
 using namespace std;
 
 int main(int argc, char** argv) {
-    cartCoord c1(1,2,3), c2(3,2,1), c3(0,0,1);
-    cartCoord2D c(1,0);
-    cout << c1*c2 << endl;
+    HOST_CALL(Test());
     
     return 0;
 }

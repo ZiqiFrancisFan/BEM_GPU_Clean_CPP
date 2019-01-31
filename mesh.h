@@ -29,7 +29,7 @@ class cartCoord {
     friend __host__ __device__ float dotProd(const cartCoord&,const cartCoord&);
     friend __host__ __device__ cuFloatComplex green2(const float,const cartCoord,const cartCoord);
     friend __host__ __device__ float Psi_L(const cartCoord);
-    friend __host__ __device__ cartCoord tf2DTo3D(const cartCoord,const cartCoord,
+    friend __host__ __device__ cartCoord xiToRv(const cartCoord,const cartCoord,
         const cartCoord,const cartCoord2D);
     friend __host__ __device__ float trnglArea(const cartCoord,const cartCoord);
     
@@ -113,7 +113,11 @@ class cartCoord2D {
     friend __host__ __device__ float pN2pXi2(const cartCoord2D);
     friend __host__ __device__ float pN3pXi1(const cartCoord2D);
     friend __host__ __device__ float pN3pXi2(const cartCoord2D);
-    friend __host__ __device__ cartCoord tf2DTo3D(const cartCoord,const cartCoord,
+    friend __host__ __device__ cartCoord2D etaToRhoTheta(const cartCoord2D);
+    friend __host__ __device__ cartCoord2D rhoThetaToXi_3(const cartCoord2D);
+    friend __host__ __device__ cartCoord2D rhoThetaToXi_1(const cartCoord2D);
+    friend __host__ __device__ cartCoord2D rhoThetaToXi_2(const cartCoord2D);
+    friend __host__ __device__ cartCoord xiToRv(const cartCoord,const cartCoord,
         const cartCoord,const cartCoord2D);
     
 private:
@@ -125,6 +129,7 @@ public:
     __host__ __device__ cartCoord2D(const float x,const float y) {coords[0]=x;coords[1]=y;}
     ~cartCoord2D() = default;
     __host__ __device__ cartCoord2D& operator=(const cartCoord2D&);
+    __host__ __device__ cartCoord2D etaToRhoTheta(const cartCoord2D);
     __host__ __device__ void set(const float,const float);
     __host__ __device__ cartCoord2D operator+(const cartCoord2D&) const;
     __host__ __device__ cartCoord2D operator-(const cartCoord2D&) const;
@@ -153,9 +158,16 @@ __host__ __device__ float pN3pXi1(const cartCoord2D);
 
 __host__ __device__ float pN3pXi2(const cartCoord2D);
 
-__host__ __device__ cartCoord tf2DTo3D(const cartCoord,const cartCoord,
+__host__ __device__ cartCoord xiToRv(const cartCoord,const cartCoord,
         const cartCoord,const cartCoord2D);
 
+__host__ __device__ cartCoord2D etaToRhoTheta(const cartCoord2D);
+
+__host__ __device__ cartCoord2D rhoThetaToXi_3(const cartCoord2D);
+
+__host__ __device__ cartCoord2D rhoThetaToXi_1(const cartCoord2D);
+
+__host__ __device__ cartCoord2D rhoThetaToXi_2(const cartCoord2D);
 
 
 #endif /* MESH_H */

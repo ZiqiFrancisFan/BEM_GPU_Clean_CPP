@@ -6,6 +6,33 @@
 #include "numerical.h"
 #include "mesh.h"
 
+//air density and speed of sound
+__constant__ float rho = 1.2041;
+
+__constant__ float c = 343.21;
+
+//Integral points and weights
+__constant__ float INTPNTS[INTORDER]; 
+
+__constant__ float INTWGTS[INTORDER];
+
+__global__ void test(float *init) {
+    printFloatMatrix(INTPNTS,1,INTORDER,1);
+    printFloatMatrix(INTWGTS,1,INTORDER,1);
+    printf("rho: %f\n",rho);
+    printf("c: %f\n",c);
+}
+
+int Test() {
+    gaussQuad g;
+    g.sendToDevice();
+    float *a;
+    CUDA_CALL(cudaMalloc(&a,sizeof(float)));
+    test<<<1,1>>>(a);
+    CUDA_CALL(cudaFree(a));
+    return EXIT_SUCCESS;
+}
+
 ostream& operator<<(ostream &out, const cuFloatComplex &rhs) {
     out << "(" << cuCrealf(rhs) << "," << cuCimagf(rhs) << ")";
     return out;
@@ -31,16 +58,26 @@ __host__ __device__ cuFloatComplex green(const float k, const float r) {
 
 __host__ __device__ void printComplexMatrix(cuFloatComplex *A, const int row, const int col, 
         const int lda) {
-	float x, y;
-	int i, j;
-	for (i = 0;i < row;i++) {
-		for (j = 0;j < col;j++) {
-			x = cuCrealf(A[IDXC0(i, j, lda)]);
-			y = cuCimagf(A[IDXC0(i, j, lda)]);
-			printf("(%f,%f) ", x, y);
-		}
-		printf("\n");
-	}		
+    float x, y;
+    int i, j;
+    for (i = 0;i < row;i++) {
+        for (j = 0;j < col;j++) {
+                x = cuCrealf(A[IDXC0(i,j,lda)]);
+                y = cuCimagf(A[IDXC0(i,j,lda)]);
+                printf("(%f,%f) ",x,y);
+        }
+        printf("\n");
+    }		
+}
+
+__host__ __device__ void printFloatMatrix(float *A, const int row, const int col, const int lda) {
+    int i, j;
+    for (i = 0;i < row;i++) {
+        for (j = 0;j < col;j++) {
+            printf("%f ",A[IDXC0(i,j,lda)]);
+        }
+        printf("\n");
+    }	
 }
 
 
@@ -138,6 +175,12 @@ int gaussQuad::genGaussParams() {
     return EXIT_SUCCESS;
 }
 
+int gaussQuad::sendToDevice() {
+    CUDA_CALL(cudaMemcpyToSymbol(INTPNTS,evalPnts,INTORDER*sizeof(float),0,cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMemcpyToSymbol(INTWGTS,wgts,INTORDER*sizeof(float),0,cudaMemcpyHostToDevice));
+    return EXIT_SUCCESS;
+}
+
 ostream& operator<<(ostream &out, const gaussQuad &rhs) {
     out << "Points: " << endl;
     for(int i=0;i<rhs.n;i++) {
@@ -150,3 +193,4 @@ ostream& operator<<(ostream &out, const gaussQuad &rhs) {
     }
     return out;
 }
+

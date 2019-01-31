@@ -35,12 +35,8 @@ using namespace std;
 #define PI 3.1415926535897932
 #endif
 
-#ifndef IMPGQORDER
-#define IMPGQORDER 7 //number of integration points for improper integration
-#endif
-
-#ifndef PGQORDER
-#define PGQORDER 7 //number of integration points or proper integration
+#ifndef INTORDER
+#define INTORDER 7
 #endif
 
 #ifndef IDXC0
@@ -62,7 +58,16 @@ printf("Error at %s:%d\n",__FILE__,__LINE__);\
 return EXIT_FAILURE;}} while(0)
 #endif
 
-__host__ __device__ void printComplexMatrix(cuFloatComplex*,const int,const int col,const int); 
+#ifndef CUDA_CALL
+#define CUDA_CALL(x) do {\
+if((x)!=cudaSuccess) {\
+printf("Error at %s:%d\n",__FILE__,__LINE__);\
+return EXIT_FAILURE; }} while(0)
+#endif
+
+__host__ __device__ void printComplexMatrix(cuFloatComplex*,const int,const int,const int); 
+
+__host__ __device__ void printFloatMatrix(float*,const int,const int,const int);
 
 __host__ __device__ cuFloatComplex angExpf(const float);
 
@@ -71,6 +76,8 @@ __host__ __device__ cuFloatComplex expfc(const cuFloatComplex);
 __host__ __device__ cuFloatComplex green(const float,const float);
 
 ostream& operator<<(ostream&,const cuFloatComplex&);
+
+int Test();
 
 //class gaussQuad
 class gaussQuad {
@@ -86,12 +93,13 @@ private:
 
     
 public:
-    gaussQuad(): n(7) { evalPnts=new float[n]; wgts=new float[n]; genGaussParams();}
+    gaussQuad(): n(INTORDER) {evalPnts=new float[n];wgts=new float[n];genGaussParams();}
     gaussQuad(const int);
     gaussQuad(const gaussQuad&);
     ~gaussQuad();
-    
     gaussQuad& operator=(const gaussQuad&);
+    
+    int sendToDevice();
     
     
 };
