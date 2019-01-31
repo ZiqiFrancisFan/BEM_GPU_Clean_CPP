@@ -87,7 +87,7 @@ __host__ __device__ cuFloatComplex green2(const float k, const cartCoord x, cons
 }
 
 __host__ __device__ float trnglArea(const cartCoord p1, const cartCoord p2) {
-    return (p1*p2).nrm2();
+    return (p1*p2).nrm2()/2;
 }
 
 //triangular element class
@@ -337,9 +337,13 @@ __host__ __device__ float pN3pXi2(const cartCoord2D pnt) {
     return -1.0;
 }
 
-__host__ __device__ cartCoord tf2DTo3D(const cartCoord pnt1,const cartCoord pnt2,
+__host__ __device__ cartCoord tf2DTo3D(const cartCoord pnt1, const cartCoord pnt2,
         const cartCoord pnt3, const cartCoord2D localPnt) {
     return numPntMul(N_1(localPnt),pnt1)+numPntMul(N_2(localPnt),pnt2)
             +numPntMul(N_3(localPnt),pnt3); 
 }
 
+__host__ __device__ cartCoord pRvpXi1TimespRvpXi2(const cartCoord pnt1, const cartCoord pnt2, 
+        const cartCoord pnt3) {
+    return (pnt1-pnt3)*(pnt2-pnt3);
+}
