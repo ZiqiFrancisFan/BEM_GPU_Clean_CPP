@@ -29,8 +29,8 @@ class mesh;
 //class cartCoord
 class cartCoord {
     friend ostream& operator<<(ostream&,const cartCoord&);
-    friend __host__ __device__ cartCoord pntNumDvd(const cartCoord&,const float);
-    friend __host__ __device__ cartCoord numPntMul(const float,const cartCoord&);
+    friend __host__ __device__ cartCoord numDvd(const cartCoord&,const float);
+    friend __host__ __device__ cartCoord numMul(const float,const cartCoord&);
     friend __host__ __device__ float dotProd(const cartCoord&,const cartCoord&);
     friend __host__ __device__ cuFloatComplex green2(const float,const cartCoord,const cartCoord);
     friend __host__ __device__ float Psi_L(const cartCoord);
@@ -39,8 +39,9 @@ class cartCoord {
     friend __host__ __device__ float trnglArea(const cartCoord,const cartCoord);
     friend __host__ __device__ cartCoord rayPlaneInt(const cartCoord,const cartCoord,
     const cartCoord,const cartCoord);
-    friend __host__ __device__ bool isEqual(const cartCoord,const cartCoord);
-    friend __host__ __device__ bool isLegal(const cartCoord);
+    friend __host__ __device__ bool rayTrnglInt(const cartCoord,const cartCoord,
+    const cartCoord,const cartCoord,const cartCoord);
+    
     friend __global__ void test(cartCoord *pnts, triElem *elems);
     friend class mesh;
 private:
@@ -60,13 +61,17 @@ public:
     __host__ __device__ void print() {printf("(%f,%f,%f)\n",coords[0],coords[1],coords[2]);}
     __host__ __device__ float nrm2() const;
     __host__ __device__ cartCoord nrmlzd();
+    __host__ __device__ bool isEqual(const cartCoord) const;
+    __host__ __device__ bool isLegal() const;
+    __host__ __device__ bool isInsideTrngl(const cartCoord,const cartCoord,const cartCoord) const; 
+    
 };
 
 ostream& operator<<(ostream&,const cartCoord&);
 
-__host__ __device__ cartCoord pntNumDvd(const cartCoord&,const float);
+__host__ __device__ cartCoord numDvd(const cartCoord&,const float);
 
-__host__ __device__ cartCoord numPntMul(const float,const cartCoord&);
+__host__ __device__ cartCoord numMul(const float,const cartCoord&);
 
 __host__ __device__ float dotProd(const cartCoord&,const cartCoord&);
 
@@ -79,9 +84,8 @@ __host__ __device__ float trnglArea(const cartCoord,const cartCoord);
 __host__ __device__ cartCoord rayPlaneInt(const cartCoord,const cartCoord,
     const cartCoord,const cartCoord);
 
-__host__ __device__ bool isEqual(const cartCoord,const cartCoord);
-
-__host__ __device__ bool isLegal(const cartCoord);
+__host__ __device__ bool rayTrnglInt(const cartCoord,const cartCoord,
+    const cartCoord,const cartCoord,const cartCoord);
 
 //class triElem
 class triElem {
@@ -110,20 +114,23 @@ private:
     int numPnts = 0;
     int numElems = 0;
     
+    float xl=0, xu=0, yl=0, yu=0, zl=0, zu=0;
+    
 public:
     mesh() = default;
     mesh(const mesh&);
     ~mesh();
     int readObj(const char*);
     mesh& operator=(const mesh&);
+    int findBB(const float);
     int transToGPU(cartCoord**,triElem**);
 };
 
 ostream& operator<<(ostream&,const mesh&);
 
 class cartCoord2D {
-    friend __host__ __device__ cartCoord2D pntNumDvd(const cartCoord2D&,const float);
-    friend __host__ __device__ cartCoord2D numPntMul(const float,const cartCoord2D&);
+    friend __host__ __device__ cartCoord2D numDvd(const cartCoord2D&,const float);
+    friend __host__ __device__ cartCoord2D numMul(const float,const cartCoord2D&);
     friend __host__ __device__ float N_1(const cartCoord2D);
     friend __host__ __device__ float N_2(const cartCoord2D);
     friend __host__ __device__ float N_3(const cartCoord2D);
@@ -156,9 +163,9 @@ public:
     __host__ __device__ void print() {printf("(%f,%f)\n",coords[0],coords[1]);}
 };
 
-__host__ __device__ cartCoord2D pntNumDvd(const cartCoord2D&,const float);
+__host__ __device__ cartCoord2D numDvd(const cartCoord2D&,const float);
 
-__host__ __device__ cartCoord2D numPntMul(const float,const cartCoord2D&);
+__host__ __device__ cartCoord2D numMul(const float,const cartCoord2D&);
 
 __host__ __device__ float N_1(const cartCoord2D);
 

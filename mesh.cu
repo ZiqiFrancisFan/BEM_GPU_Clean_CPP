@@ -68,7 +68,7 @@ __host__ __device__ float dotProd(const cartCoord &p1,const cartCoord &p2) {
     return p1.coords[0]*p2.coords[0]+p1.coords[1]*p2.coords[1]+p1.coords[2]*p2.coords[2];
 }
 
-__host__ __device__ cartCoord pntNumDvd(const cartCoord &pnt, const float lambda) {
+__host__ __device__ cartCoord numDvd(const cartCoord &pnt, const float lambda) {
     if(lambda == 0) {
         printf("divisor cannot be 0.\n");
         return cartCoord(0,0,0);
@@ -77,7 +77,7 @@ __host__ __device__ cartCoord pntNumDvd(const cartCoord &pnt, const float lambda
     }
 }
 
-__host__ __device__ cartCoord numPntMul(const float lambda, const cartCoord &pnt) {
+__host__ __device__ cartCoord numMul(const float lambda, const cartCoord &pnt) {
     return cartCoord(lambda*pnt.coords[0],lambda*pnt.coords[1],lambda*pnt.coords[2]);
 }
 
@@ -99,47 +99,74 @@ __host__ __device__ cartCoord cartCoord::nrmlzd() {
         return cartCoord(nanf(""),nanf(""),nanf(""));
     } else {
         float nrm = nrm2();
-        return pntNumDvd(*this,nrm);
+        return numDvd(*this,nrm);
     }
 }
 
 __host__ __device__ cartCoord rayPlaneInt(const cartCoord sp, const cartCoord dir,
     const cartCoord n, const cartCoord pnt) {
-    if(isEqual(sp,pnt)) {
-        return sp;
+    cartCoord temp;
+    if((sp.isEqual(pnt))) {
+        temp = sp;
     } else {
         if(dotProd(n,sp-pnt) == 0) {
-            return sp;
+            temp =  sp;
         } else {
             if(dotProd(n,dir)==0) {
-                return cartCoord(nanf(""),nanf(""),nanf(""));
+                temp =  cartCoord(nanf(""),nanf(""),nanf(""));
             } else {
                 float t = (dotProd(n,pnt)-dotProd(n,sp))/dotProd(n,dir);
                 if(t>0) {
-                    return sp+numPntMul(t,dir);
+                    temp = sp+numMul(t,dir);
                 } else {
-                    return cartCoord(nanf(""),nanf(""),nanf(""));
+                    temp = cartCoord(nanf(""),nanf(""),nanf(""));
                 }
             }
         }
     }
+    printf("(%f,%f,%f)\n",temp.coords[0],temp.coords[1],temp.coords[2]);
+    return temp;
 }
 
-__host__ __device__ bool isLegal(const cartCoord rhs) {
-    if(rhs.coords[0]!=rhs.coords[0]||rhs.coords[1]!=rhs.coords[1]||rhs.coords[2]!=rhs.coords[2]) {
+__host__ __device__ bool cartCoord::isLegal() const {
+    if(coords[0]!=coords[0]||coords[1]!=coords[1]||coords[2]!=coords[2]) {
         return false;
     } else {
         return true;
     }
 }
 
-__host__ __device__ bool isEqual(const cartCoord p1, const cartCoord p2) {
-    if(p1.coords[0]==p2.coords[0] && p1.coords[1]==p2.coords[1] 
-            && p1.coords[2]==p2.coords[2]) {
+__host__ __device__ bool cartCoord::isEqual(const cartCoord p) const {
+    if(coords[0]==p.coords[0]&&coords[1]==p.coords[1]&&coords[2]==p.coords[2]) {
         return true;
     } else {
         return false;
     }
+}
+
+
+__host__ __device__ bool cartCoord::isInsideTrngl(const cartCoord p1,
+        const cartCoord p2, const cartCoord p3) const {
+    if(!isLegal()) {
+        return false;
+    } else {
+        cartCoord v12 = p2-p1, v23 = p3-p2, v31 = p1-p3;
+        cartCoord v1p = *this-p1, v2p = *this-p2, v3p = *this-p3;
+        cartCoord t1 = v12*v1p, t2 = v23*v2p, t3 = v31*v3p;
+        cartCoord t1Nrm = t1.nrmlzd(), t2Nrm = t2.nrmlzd(), t3Nrm = t3.nrmlzd();
+        if(t1Nrm.isEqual(t2Nrm) && t2Nrm.isEqual(t3Nrm) && t3Nrm.isEqual(t1Nrm)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+__host__ __device__ bool rayTrnglInt(const cartCoord sp, const cartCoord dir,
+    const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cartCoord n = (p2-p1)*(p3-p1);
+    cartCoord intPnt = rayPlaneInt(sp,dir,n,p1);
+    return intPnt.isInsideTrngl(p1,p2,p3);
 }
 
 //triangular element class
@@ -304,6 +331,48 @@ ostream& operator<<(ostream &out, const mesh &rhs) {
     return out;
 }
 
+int mesh::findBB(const float threshold) {
+    if(numPnts!=0 && numElems!=0) {
+        xl = pnts[0].coords[0]; 
+        xu = pnts[0].coords[0]; 
+        yl = pnts[0].coords[1]; 
+        yu = pnts[0].coords[1];
+        zl = pnts[0].coords[2]; 
+        zu = pnts[0].coords[2];
+        for(int i=1;i<numPnts;i++) {
+            if(pnts[i].coords[0] < xl) {
+                xl = pnts[i].coords[0];
+            }
+            if(pnts[i].coords[0] > xu) {
+                xu = pnts[i].coords[0];
+            }
+            if(pnts[i].coords[1] < yl) {
+                yl = pnts[i].coords[1];
+            }
+            if(pnts[i].coords[1] > yu) {
+                yu = pnts[i].coords[1];
+            }
+            if(pnts[i].coords[2] < zl) {
+                zl = pnts[i].coords[2];
+            }
+            if(pnts[i].coords[2] > zu) {
+                zu = pnts[i].coords[2];
+            }
+        }
+        xl-=threshold;
+        xu+=threshold;
+        yl-=threshold;
+        yu+=threshold;
+        zl-=threshold;
+        zu+=threshold;
+        
+        return EXIT_SUCCESS;
+   } else {
+       cout << "Not enough mesh information!" << endl;
+       return EXIT_FAILURE;
+   }
+}
+
 int mesh::transToGPU(cartCoord **pPnts_d,triElem **pElems_d) {
     if(pnts!=NULL && elems!=NULL) {
         CUDA_CALL(cudaMalloc(pPnts_d,numPnts*sizeof(cartCoord)));
@@ -345,7 +414,7 @@ __host__ __device__ cartCoord2D cartCoord2D::operator-(const cartCoord2D &rhs) c
     return temp;
 }
 
-__host__ __device__ cartCoord2D pntNumDvd(const cartCoord2D &dividend, 
+__host__ __device__ cartCoord2D numDvd(const cartCoord2D &dividend, 
         const float divisor) {
     if(divisor == 0) {
         printf("divisor cannot be 0.\n");
@@ -355,7 +424,7 @@ __host__ __device__ cartCoord2D pntNumDvd(const cartCoord2D &dividend,
     }
 }
 
-__host__ __device__ cartCoord2D numPntMul(const float lambda, const cartCoord2D &pnt) {
+__host__ __device__ cartCoord2D numMul(const float lambda, const cartCoord2D &pnt) {
     return cartCoord2D(lambda*pnt.coords[0],lambda*pnt.coords[1]);
 }
 
@@ -401,8 +470,8 @@ __host__ __device__ float pN3pXi2(const cartCoord2D pnt) {
 
 __host__ __device__ cartCoord xiToRv(const cartCoord pnt1, const cartCoord pnt2,
         const cartCoord pnt3, const cartCoord2D localPnt) {
-    return numPntMul(N_1(localPnt),pnt1)+numPntMul(N_2(localPnt),pnt2)
-            +numPntMul(N_3(localPnt),pnt3); 
+    return numMul(N_1(localPnt),pnt1)+numMul(N_2(localPnt),pnt2)
+            +numMul(N_3(localPnt),pnt3); 
 }
 
 __host__ __device__ cartCoord pRvpXi1TimespRvpXi2(const cartCoord pnt1, const cartCoord pnt2, 
