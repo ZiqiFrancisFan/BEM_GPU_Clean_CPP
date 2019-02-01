@@ -127,6 +127,7 @@ class mesh {
     friend ostream& operator<<(ostream&,const mesh&);
     friend __global__ void rayTrnglsInt(const cartCoord,const cartCoord,
     const cartCoord*,const triElem*,const int,bool*);
+    friend int Test();
     
 private:
     cartCoord *pnts = NULL;
@@ -147,8 +148,9 @@ public:
     int readObj(const char*);
     mesh& operator=(const mesh&);
     int findBB(const float);
-    int transToGPU(cartCoord**,triElem**);
-    int genCHIEF(const int);
+    int meshCloudToGPU(cartCoord**,triElem**);
+    int genCHIEF(const int,const float);
+    void printBB();
 };
 
 ostream& operator<<(ostream&,const mesh&);

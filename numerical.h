@@ -72,6 +72,10 @@ printf("Error at %s:%d\n",__FILE__,__LINE__);\
 return EXIT_FAILURE;}} while(0)
 #endif
 
+#ifndef EPS
+#define EPS 0.00005
+#endif
+
 __host__ __device__ void printComplexMatrix(cuFloatComplex*,const int,const int,const int); 
 
 __host__ __device__ void printFloatMatrix(float*,const int,const int,const int);

@@ -23,14 +23,26 @@ __global__ void test(cartCoord *pnts, triElem *elems) {
 
 int Test() {
     mesh m;
-    m.readObj("test.obj");
+    m.readObj("sphere.obj");
+    bool *flags_d;
+    CUDA_CALL(cudaMalloc(&flags_d,m.numElems*sizeof(bool)));
+    float *dists = new float[m.numPnts];
+    bool *flags = new bool[m.numElems];
     cartCoord *pnts_d;
     triElem *elems_d;
-    m.transToGPU(&pnts_d,&elems_d);
-    test<<<1,1>>>(pnts_d,elems_d);
+    m.meshCloudToGPU(&pnts_d,&elems_d);
+    cartCoord sp(0,0,0);
+    int width = 32;
+    int numBlocks = (m.numElems+width-1)/width;
+    cartCoord dirCHIEF(1.1,1,1);
+    rayTrnglsInt<<<numBlocks,width>>>(sp,dirCHIEF,pnts_d,elems_d,m.numElems,flags_d);
+    CUDA_CALL(cudaMemcpy(flags,flags_d,m.numElems*sizeof(bool),cudaMemcpyDeviceToHost));
+    cout << inObj(flags,m.numElems) << endl;
     CUDA_CALL(cudaFree(pnts_d));
     CUDA_CALL(cudaFree(elems_d));
-    
+    CUDA_CALL(cudaFree(flags_d));
+    delete[] flags;
+    delete[] dists;
     return EXIT_SUCCESS;
 }
 
@@ -86,7 +98,7 @@ __host__ __device__ float descale(const float lb, const float ub, const float nu
 }
 
 __host__ __device__ float arrayMin(const float *arr, const int num) {
-    int temp = arr[0];
+    float temp = arr[0];
     for(int i=1;i<num;i++) {
         if(arr[i] < temp) {
             temp = arr[i];
