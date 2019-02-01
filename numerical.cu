@@ -16,20 +16,21 @@ __constant__ float INTPNTS[INTORDER];
 
 __constant__ float INTWGTS[INTORDER];
 
-__global__ void test(float *init) {
-    printFloatMatrix(INTPNTS,1,INTORDER,1);
-    printFloatMatrix(INTWGTS,1,INTORDER,1);
-    printf("rho: %f\n",rho);
-    printf("c: %f\n",c);
+__global__ void test(cartCoord *pnts, triElem *elems) {
+    printf("(%f,%f,%f)\n",pnts[0].coords[0],pnts[0].coords[1],pnts[0].coords[2]);
+    printf("%d,%d,%d\n",elems->nodes[0],elems->nodes[1],elems->nodes[2]);
 }
 
 int Test() {
-    gaussQuad g;
-    g.sendToDevice();
-    float *a;
-    CUDA_CALL(cudaMalloc(&a,sizeof(float)));
-    test<<<1,1>>>(a);
-    CUDA_CALL(cudaFree(a));
+    mesh m;
+    m.readObj("test.obj");
+    cartCoord *pnts_d;
+    triElem *elems_d;
+    m.transToGPU(&pnts_d,&elems_d);
+    test<<<1,1>>>(pnts_d,elems_d);
+    CUDA_CALL(cudaFree(pnts_d));
+    CUDA_CALL(cudaFree(elems_d));
+    
     return EXIT_SUCCESS;
 }
 

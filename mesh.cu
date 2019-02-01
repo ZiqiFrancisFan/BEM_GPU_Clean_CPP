@@ -3,14 +3,14 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-//cartCoord class functions
+
 #include <cuComplex.h>
 #include <vector>
 
 #include "mesh.h"
 #include "numerical.h"
 
-
+//cartCoord class functions
 __host__ __device__ cartCoord::cartCoord(const cartCoord &rhs) {
     for(int i=0;i<3;i++) {
         coords[i] = rhs.coords[i];
@@ -52,6 +52,10 @@ __host__ __device__ cartCoord cartCoord::operator-(const cartCoord &rhs) const {
     return temp;
 }
 
+__host__ __device__ cartCoord cartCoord::operator-() const {
+    return cartCoord(-coords[0],-coords[1],-coords[2]);
+}
+
 __host__ __device__ cartCoord cartCoord::operator*(const cartCoord &rhs) const {
     cartCoord prod;
     prod.coords[0] = coords[1]*rhs.coords[2]-coords[2]*rhs.coords[1];
@@ -88,6 +92,54 @@ __host__ __device__ cuFloatComplex green2(const float k, const cartCoord x, cons
 
 __host__ __device__ float trnglArea(const cartCoord p1, const cartCoord p2) {
     return (p1*p2).nrm2()/2;
+}
+
+__host__ __device__ cartCoord cartCoord::nrmlzd() {
+    if(nrm2() == 0) {
+        return cartCoord(nanf(""),nanf(""),nanf(""));
+    } else {
+        float nrm = nrm2();
+        return pntNumDvd(*this,nrm);
+    }
+}
+
+__host__ __device__ cartCoord rayPlaneInt(const cartCoord sp, const cartCoord dir,
+    const cartCoord n, const cartCoord pnt) {
+    if(isEqual(sp,pnt)) {
+        return sp;
+    } else {
+        if(dotProd(n,sp-pnt) == 0) {
+            return sp;
+        } else {
+            if(dotProd(n,dir)==0) {
+                return cartCoord(nanf(""),nanf(""),nanf(""));
+            } else {
+                float t = (dotProd(n,pnt)-dotProd(n,sp))/dotProd(n,dir);
+                if(t>0) {
+                    return sp+numPntMul(t,dir);
+                } else {
+                    return cartCoord(nanf(""),nanf(""),nanf(""));
+                }
+            }
+        }
+    }
+}
+
+__host__ __device__ bool isLegal(const cartCoord rhs) {
+    if(rhs.coords[0]!=rhs.coords[0]||rhs.coords[1]!=rhs.coords[1]||rhs.coords[2]!=rhs.coords[2]) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+__host__ __device__ bool isEqual(const cartCoord p1, const cartCoord p2) {
+    if(p1.coords[0]==p2.coords[0] && p1.coords[1]==p2.coords[1] 
+            && p1.coords[2]==p2.coords[2]) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 //triangular element class
@@ -252,6 +304,16 @@ ostream& operator<<(ostream &out, const mesh &rhs) {
     return out;
 }
 
+int mesh::transToGPU(cartCoord **pPnts_d,triElem **pElems_d) {
+    if(pnts!=NULL && elems!=NULL) {
+        CUDA_CALL(cudaMalloc(pPnts_d,numPnts*sizeof(cartCoord)));
+        CUDA_CALL(cudaMemcpy(*pPnts_d,pnts,numPnts*sizeof(cartCoord),cudaMemcpyHostToDevice));
+        CUDA_CALL(cudaMalloc(pElems_d,numElems*sizeof(triElem)));
+        CUDA_CALL(cudaMemcpy(*pElems_d,elems,numElems*sizeof(triElem),cudaMemcpyHostToDevice));
+    }
+    return EXIT_SUCCESS;
+}
+
 //cartCoord2D
 __host__ __device__ cartCoord2D::cartCoord2D(const cartCoord2D &rhs) {
     coords[0] = rhs.coords[0];
@@ -375,3 +437,4 @@ __host__ __device__ cartCoord2D rhoThetaToXi_2(const cartCoord2D s) {
     temp.coords[1] = 1-s.coords[0];
     return temp;
 }
+

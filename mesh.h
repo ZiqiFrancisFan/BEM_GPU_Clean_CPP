@@ -14,12 +14,17 @@
 #ifndef MESH_H
 #define MESH_H
 #include <iostream>
+#include <cuda.h>
+#include <cuda_runtime.h>
+#include <math_constants.h>
 
 
 
 using namespace std;
 
 class cartCoord2D;
+class triElem;
+class mesh;
 
 //class cartCoord
 class cartCoord {
@@ -32,7 +37,11 @@ class cartCoord {
     friend __host__ __device__ cartCoord xiToRv(const cartCoord,const cartCoord,
         const cartCoord,const cartCoord2D);
     friend __host__ __device__ float trnglArea(const cartCoord,const cartCoord);
-    
+    friend __host__ __device__ cartCoord rayPlaneInt(const cartCoord,const cartCoord,
+    const cartCoord,const cartCoord);
+    friend __host__ __device__ bool isEqual(const cartCoord,const cartCoord);
+    friend __host__ __device__ bool isLegal(const cartCoord);
+    friend __global__ void test(cartCoord *pnts, triElem *elems);
     friend class mesh;
 private:
     float coords[3];
@@ -46,9 +55,11 @@ public:
     __host__ __device__ void set(const float,const float,const float);
     __host__ __device__ cartCoord operator+(const cartCoord&) const;
     __host__ __device__ cartCoord operator-(const cartCoord&) const;
+    __host__ __device__ cartCoord operator-() const;
     __host__ __device__ cartCoord operator*(const cartCoord&) const;
     __host__ __device__ void print() {printf("(%f,%f,%f)\n",coords[0],coords[1],coords[2]);}
     __host__ __device__ float nrm2() const;
+    __host__ __device__ cartCoord nrmlzd();
 };
 
 ostream& operator<<(ostream&,const cartCoord&);
@@ -65,9 +76,17 @@ __host__ __device__ float Psi_L(const cartCoord);
 
 __host__ __device__ float trnglArea(const cartCoord,const cartCoord);
 
+__host__ __device__ cartCoord rayPlaneInt(const cartCoord,const cartCoord,
+    const cartCoord,const cartCoord);
+
+__host__ __device__ bool isEqual(const cartCoord,const cartCoord);
+
+__host__ __device__ bool isLegal(const cartCoord);
+
 //class triElem
 class triElem {
     friend ostream& operator<<(ostream&,const triElem&);
+    friend __global__ void test(cartCoord *pnts, triElem *elems);
     friend class mesh;
 private:
     int nodes[3];
@@ -97,6 +116,7 @@ public:
     ~mesh();
     int readObj(const char*);
     mesh& operator=(const mesh&);
+    int transToGPU(cartCoord**,triElem**);
 };
 
 ostream& operator<<(ostream&,const mesh&);

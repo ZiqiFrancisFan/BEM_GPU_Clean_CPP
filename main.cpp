@@ -21,8 +21,7 @@
 using namespace std;
 
 int main(int argc, char** argv) {
-    HOST_CALL(Test());
-    
+    Test();
     return 0;
 }
 
