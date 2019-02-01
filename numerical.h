@@ -62,7 +62,14 @@ return EXIT_FAILURE;}} while(0)
 #define CUDA_CALL(x) do {\
 if((x)!=cudaSuccess) {\
 printf("Error at %s:%d\n",__FILE__,__LINE__);\
-return EXIT_FAILURE; }} while(0)
+return EXIT_FAILURE;}} while(0)
+#endif
+
+#ifndef CURAND_CALL
+#define CURAND_CALL(x) do {\
+if((x)!=CURAND_STATUS_SUCCESS) {\
+printf("Error at %s:%d\n",__FILE__,__LINE__);\
+return EXIT_FAILURE;}} while(0)
 #endif
 
 __host__ __device__ void printComplexMatrix(cuFloatComplex*,const int,const int,const int); 
@@ -74,6 +81,12 @@ __host__ __device__ cuFloatComplex angExpf(const float);
 __host__ __device__ cuFloatComplex expfc(const cuFloatComplex);
 
 __host__ __device__ cuFloatComplex green(const float,const float);
+
+__host__ __device__ float descale(const float,const float,const float);
+
+__host__ __device__ float arrayMin(const float*,const int);
+
+__host__ __device__ bool inObj(const bool*,const int);
 
 ostream& operator<<(ostream&,const cuFloatComplex&);
 

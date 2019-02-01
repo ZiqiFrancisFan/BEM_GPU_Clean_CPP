@@ -81,6 +81,33 @@ __host__ __device__ void printFloatMatrix(float *A, const int row, const int col
     }	
 }
 
+__host__ __device__ float descale(const float lb, const float ub, const float num) {
+    return lb+(ub-lb)*num;
+}
+
+__host__ __device__ float arrayMin(const float *arr, const int num) {
+    int temp = arr[0];
+    for(int i=1;i<num;i++) {
+        if(arr[i] < temp) {
+            temp = arr[i];
+        }
+    }
+    return temp;
+}
+
+__host__ __device__ bool inObj(const bool *flags, const int num) {
+    int temp = 0;
+    for(int i=0;i<num;i++) {
+        if(flags[i]) {
+            temp++;
+        }
+    }
+    if(temp%2==0) {
+        return false;
+    } else {
+        return true;
+    }
+}
 
 //Gaussian cartCoords generation
 gaussQuad::gaussQuad(const gaussQuad &rhs) {

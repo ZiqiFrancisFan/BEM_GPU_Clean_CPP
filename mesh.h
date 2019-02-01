@@ -29,20 +29,35 @@ class mesh;
 //class cartCoord
 class cartCoord {
     friend ostream& operator<<(ostream&,const cartCoord&);
+    
     friend __host__ __device__ cartCoord numDvd(const cartCoord&,const float);
+    
     friend __host__ __device__ cartCoord numMul(const float,const cartCoord&);
+    
     friend __host__ __device__ float dotProd(const cartCoord&,const cartCoord&);
+    
     friend __host__ __device__ cuFloatComplex green2(const float,const cartCoord,const cartCoord);
+    
     friend __host__ __device__ float Psi_L(const cartCoord);
+    
     friend __host__ __device__ cartCoord xiToRv(const cartCoord,const cartCoord,
         const cartCoord,const cartCoord2D);
+    
     friend __host__ __device__ float trnglArea(const cartCoord,const cartCoord);
+    
     friend __host__ __device__ cartCoord rayPlaneInt(const cartCoord,const cartCoord,
     const cartCoord,const cartCoord);
+    
     friend __host__ __device__ bool rayTrnglInt(const cartCoord,const cartCoord,
     const cartCoord,const cartCoord,const cartCoord);
     
+    friend __global__ void rayTrnglsInt(const cartCoord,const cartCoord,
+    const cartCoord*,const triElem*,const int,bool*);
+    
     friend __global__ void test(cartCoord *pnts, triElem *elems);
+    
+    friend __global__ void distPntPnts(const cartCoord,const cartCoord*,const int,float*);
+    
     friend class mesh;
 private:
     float coords[3];
@@ -91,6 +106,8 @@ __host__ __device__ bool rayTrnglInt(const cartCoord,const cartCoord,
 class triElem {
     friend ostream& operator<<(ostream&,const triElem&);
     friend __global__ void test(cartCoord *pnts, triElem *elems);
+    friend __global__ void rayTrnglsInt(const cartCoord,const cartCoord,
+    const cartCoord*,const triElem*,const int,bool*);
     friend class mesh;
 private:
     int nodes[3];
@@ -108,11 +125,18 @@ ostream& operator<<(ostream&,const triElem&);
 //class mesh
 class mesh {
     friend ostream& operator<<(ostream&,const mesh&);
+    friend __global__ void rayTrnglsInt(const cartCoord,const cartCoord,
+    const cartCoord*,const triElem*,const int,bool*);
+    
 private:
     cartCoord *pnts = NULL;
+    cartCoord *chiefPnts = NULL;
     triElem *elems = NULL;
     int numPnts = 0;
+    int numCHIEF = 0;
     int numElems = 0;
+    
+    cartCoord dirCHIEF;
     
     float xl=0, xu=0, yl=0, yu=0, zl=0, zu=0;
     
@@ -124,9 +148,11 @@ public:
     mesh& operator=(const mesh&);
     int findBB(const float);
     int transToGPU(cartCoord**,triElem**);
+    int genCHIEF(const int);
 };
 
 ostream& operator<<(ostream&,const mesh&);
+__global__ void rayTrnglsInt(const cartCoord*,const triElem*,bool*);
 
 class cartCoord2D {
     friend __host__ __device__ cartCoord2D numDvd(const cartCoord2D&,const float);

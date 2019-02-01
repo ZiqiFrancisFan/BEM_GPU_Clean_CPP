@@ -6,7 +6,8 @@
 
 #include <cuComplex.h>
 #include <vector>
-
+#include <curand.h>
+#include <curand_kernel.h>
 #include "mesh.h"
 #include "numerical.h"
 
@@ -367,10 +368,81 @@ int mesh::findBB(const float threshold) {
         zu+=threshold;
         
         return EXIT_SUCCESS;
-   } else {
-       cout << "Not enough mesh information!" << endl;
-       return EXIT_FAILURE;
-   }
+    } else {
+        cout << "Not enough mesh information!" << endl;
+        return EXIT_FAILURE;
+    }
+}
+
+__global__ void rayTrnglsInt(const cartCoord sp, const cartCoord dir, 
+        const cartCoord *pnts, const triElem *elems, const int numElems, bool *flags) {
+    int idx = blockIdx.x*blockDim.x+threadIdx.x; 
+    if(idx < numElems) {
+        flags[idx] = rayTrnglInt(sp,dir,pnts[elems[idx].nodes[0]],pnts[elems[idx].nodes[1]],
+                pnts[elems[idx].nodes[2]]);
+    }
+}
+
+__global__ void distPntPnts(const cartCoord sp, const cartCoord *pnts, const int numPnts, float *dists) {
+    int idx = blockIdx.x*blockDim.x+threadIdx.x; 
+    if(idx < numPnts) {
+        dists[idx] = (pnts[idx]-sp).nrm2();
+    }
+}
+
+int mesh::genCHIEF(const int num) {
+    numCHIEF = num;
+    if(chiefPnts != NULL) {
+        delete[] chiefPnts;
+    }
+    chiefPnts = new cartCoord[numCHIEF];
+    float threshold = 0.1;
+    float randNums[3];
+    int width = 32;
+    int numBlocks = (numElems+width-1)/width;
+    float xRand, yRand, zRand;
+    unsigned long long seed = 0;
+    curandGenerator_t gen;
+    CURAND_CALL(curandCreateGeneratorHost(&gen,CURAND_RNG_PSEUDO_DEFAULT));
+    dirCHIEF.set(1.3,3.3,-0.4);
+    cartCoord sp;
+    cartCoord *pnts_d;
+    triElem *elems_d;
+    float *dists = new float[numPnts];
+    float *dists_d;
+    CUDA_CALL(cudaMalloc(&dists_d,numPnts*sizeof(float)));
+    HOST_CALL(transToGPU(&pnts_d,&elems_d));
+    bool *flags_d;
+    bool *flags = new bool[numElems];
+    CUDA_CALL(cudaMalloc(&flags_d,numElems*sizeof(bool)));
+    int cnt = 0; //counter for number of CHIEF points
+    while(cnt < numCHIEF) {
+        do {
+            CURAND_CALL(curandSetPseudoRandomGeneratorSeed(gen, seed++));
+            CURAND_CALL(curandGenerateUniform(gen,randNums,3));
+            xRand = descale(xl,xu,randNums[0]);
+            yRand = descale(yl,yu,randNums[1]);
+            zRand = descale(zl,zu,randNums[2]);
+            sp.set(xRand,yRand,zRand);
+            rayTrnglsInt<<<numBlocks,width>>>(sp,dirCHIEF,pnts_d,elems_d,numElems,flags_d);
+            CUDA_CALL(cudaMemcpy(flags,flags_d,numElems*sizeof(bool),cudaMemcpyDeviceToHost));
+            distPntPnts<<<numBlocks,width>>>(sp,pnts,numPnts,dists_d);
+            CUDA_CALL(cudaMemcpy(dists,dists_d,numPnts*sizeof(float),cudaMemcpyDeviceToHost));
+        } while(!inObj(flags,numElems)||arrayMin(dists,numPnts)>threshold);
+        chiefPnts[cnt].set(xRand,yRand,zRand);
+        cnt++;
+    }
+    
+    delete[] dists;
+    delete[] flags;
+    CUDA_CALL(cudaFree(pnts_d));
+    CUDA_CALL(cudaFree(elems_d));
+    CUDA_CALL(cudaFree(flags_d));
+    CUDA_CALL(cudaFree(dists_d));
+    for(int i=0;i<numCHIEF;i++) {
+        cout << chiefPnts[i] << endl;
+    }
+    return EXIT_SUCCESS;
 }
 
 int mesh::transToGPU(cartCoord **pPnts_d,triElem **pElems_d) {
