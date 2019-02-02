@@ -7,9 +7,9 @@
 #include "mesh.h"
 
 //air density and speed of sound
-__constant__ float rho = 1.2041;
+__constant__ float density = 1.2041;
 
-__constant__ float c = 343.21;
+__constant__ float speed = 343.21;
 
 //Integral points and weights
 __constant__ float INTPNTS[INTORDER]; 
@@ -66,6 +66,10 @@ __host__ __device__ cuFloatComplex green(const float k, const float r) {
     float y = 4*PI*r;
     cuFloatComplex x = angExpf(-k*r);
     return make_cuFloatComplex(cuCrealf(x)/y,cuCimagf(x)/y);
+}
+
+__host__ __device__ float PsiL(const float radius) {
+    return 1.0/(4*PI*radius);
 }
 
 

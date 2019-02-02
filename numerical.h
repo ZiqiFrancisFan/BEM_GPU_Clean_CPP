@@ -76,6 +76,17 @@ return EXIT_FAILURE;}} while(0)
 #define EPS 0.00005
 #endif
 
+//air density and speed of sound
+extern __constant__ float density;
+
+extern __constant__ float speed;
+
+//Integral points and weights
+extern __constant__ float INTPNTS[INTORDER]; 
+
+extern __constant__ float INTWGTS[INTORDER];
+
+
 __host__ __device__ void printComplexMatrix(cuFloatComplex*,const int,const int,const int); 
 
 __host__ __device__ void printFloatMatrix(float*,const int,const int,const int);
@@ -85,6 +96,8 @@ __host__ __device__ cuFloatComplex angExpf(const float);
 __host__ __device__ cuFloatComplex expfc(const cuFloatComplex);
 
 __host__ __device__ cuFloatComplex green(const float,const float);
+
+__host__ __device__ float PsiL(const float);
 
 __host__ __device__ float descale(const float,const float,const float);
 
