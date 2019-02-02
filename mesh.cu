@@ -756,22 +756,22 @@ __global__ void pntsElems_nm_sgl(const float k, const int n, const int m, const 
         hCoeffs_sgl1[3*idx+1] = h_sgl1[1];
         hCoeffs_sgl1[3*idx+2] = h_sgl1[2];
         
-        h_sgl2[0] = h_l1_sgl2(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        h_sgl2[0] = h_l1_sgl2(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
-        h_sgl2[1] = h_l2_sgl2(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        h_sgl2[1] = h_l2_sgl2(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
-        h_sgl2[2] = h_l3_sgl2(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        h_sgl2[2] = h_l3_sgl2(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
         
         hCoeffs_sgl2[3*idx] = h_sgl2[0];
         hCoeffs_sgl2[3*idx+1] = h_sgl2[1];
         hCoeffs_sgl2[3*idx+2] = h_sgl2[2];
         
-        h_sgl3[0] = h_l1_sgl3(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        h_sgl3[0] = h_l1_sgl3(k,pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
-        h_sgl3[1] = h_l2_sgl3(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        h_sgl3[1] = h_l2_sgl3(k,pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
-        h_sgl3[2] = h_l3_sgl3(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        h_sgl3[2] = h_l3_sgl3(k,pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
         
         hCoeffs_sgl3[3*idx] = h_sgl3[0];
@@ -789,22 +789,22 @@ __global__ void pntsElems_nm_sgl(const float k, const int n, const int m, const 
         gCoeffs_sgl1[3*idx+1] = g_sgl1[1];
         gCoeffs_sgl1[3*idx+2] = g_sgl1[2];
         
-        g_sgl2[0] = g_l1_sgl2(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        g_sgl2[0] = g_l1_sgl2(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
-        g_sgl2[1] = g_l2_sgl2(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        g_sgl2[1] = g_l2_sgl2(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
-        g_sgl2[2] = g_l3_sgl2(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        g_sgl2[2] = g_l3_sgl2(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
         
         gCoeffs_sgl2[3*idx] = g_sgl2[0];
         gCoeffs_sgl2[3*idx+1] = g_sgl2[1];
         gCoeffs_sgl2[3*idx+2] = g_sgl2[2];
         
-        g_sgl3[0] = g_l1_sgl3(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        g_sgl3[0] = g_l1_sgl3(k,pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
-        g_sgl3[1] = g_l2_sgl3(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        g_sgl3[1] = g_l2_sgl3(k,pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
-        g_sgl3[2] = g_l3_sgl3(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        g_sgl3[2] = g_l3_sgl3(k,pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
         
         gCoeffs_sgl3[3*idx] = g_sgl3[0];
