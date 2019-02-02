@@ -74,6 +74,12 @@ class cartCoord {
         const triElem *elems, const cartCoord *pnts, const int numPnts, 
         cuFloatComplex *hCoeffs, cuFloatComplex *gCoeffs, float *cCoeffs);
     
+    friend __global__ void pntsElems_nm_sgl(const float k, const int n, const int m, const triElem *elems, 
+        const int numElems, const cartCoord *pnts, cuFloatComplex *hCoeffs_sgl1, 
+        cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, cuFloatComplex *gCoeffs_sgl1, 
+        cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, float *cCoeffs_sgl1, 
+        float *cCoeffs_sgl2, float *cCoeffs_sgl3);
+    
     friend class mesh;
 private:
     float coords[3];
@@ -143,6 +149,12 @@ class triElem {
         const triElem *elems, const cartCoord *pnts, const int numPnts, 
         cuFloatComplex *hCoeffs, cuFloatComplex *gCoeffs, float *cCoeffs);
     
+    friend __global__ void pntsElems_nm_sgl(const float k, const int n, const int m, const triElem *elems, 
+        const int numElems, const cartCoord *pnts, cuFloatComplex *hCoeffs_sgl1, 
+        cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, cuFloatComplex *gCoeffs_sgl1, 
+        cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, float *cCoeffs_sgl1, 
+        float *cCoeffs_sgl2, float *cCoeffs_sgl3);
+    
     friend class mesh;
 private:
     int nodes[3];
@@ -157,9 +169,7 @@ public:
 
 ostream& operator<<(ostream&,const triElem&);
 
-__global__ void pntsElem_lnm_nsgl(const float k, const int l, const int n, const int m, 
-        const triElem *elems, const cartCoord *pnts, const int numPnts, 
-        cuFloatComplex *hCoeffs, cuFloatComplex *gCoeffs, float *cCoeffs);
+
 
 //class mesh
 class mesh {
@@ -362,9 +372,18 @@ __device__ cuFloatComplex h_l3_sgl3(const float k, const cartCoord x,
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m);
 
-__device__ float c_l(const cartCoord x, const cartCoord p1, const cartCoord p2, 
+__device__ float c_l_nsgl(const cartCoord x, const cartCoord p1, const cartCoord p2, 
         const cartCoord p3, const int n, const int m);
 
+__global__ void pntsElem_lnm_nsgl(const float k, const int l, const int n, const int m, 
+        const triElem *elems, const cartCoord *pnts, const int numPnts, 
+        cuFloatComplex *hCoeffs, cuFloatComplex *gCoeffs, float *cCoeffs);
+
+__global__ void pntsElems_nm_sgl(const float k, const int n, const int m, const triElem *elems, 
+        const int numElems, const cartCoord *pnts, cuFloatComplex *hCoeffs_sgl1, 
+        cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, cuFloatComplex *gCoeffs_sgl1, 
+        cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, float *cCoeffs_sgl1, 
+        float *cCoeffs_sgl2, float *cCoeffs_sgl3);
 
 
 #endif /* MESH_H */

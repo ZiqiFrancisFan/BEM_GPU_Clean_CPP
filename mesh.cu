@@ -619,7 +619,64 @@ __device__ cuFloatComplex h_l3_sgl3(const float k, const cartCoord x,
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
 }
 
-__device__ float c_l(const cartCoord x, const cartCoord p1, const cartCoord p2, 
+__device__ float c_l_nsgl(const cartCoord x, const cartCoord p1, const cartCoord p2, 
+        const cartCoord p3, const int n, const int m) {
+    float xi1, xi2, rho, theta, vertCrossProd, temp;
+    float eta1 = INTPNTS[m], eta2 = INTPNTS[n];
+    cartCoord y, nrml, crossProd;
+    float psiLdrv;
+    rho = 0.5+0.5*eta1;
+    theta = 0.5+0.5*eta2;
+    xi1 = rho*(1-theta);
+    xi2 = rho*theta;
+    crossProd = (p1-p3)*(p2-p3);
+    vertCrossProd = crossProd.nrm2();
+    nrml = crossProd.nrmlzd();
+    y = xiToElem(p1,p2,p3,cartCoord2D(xi1,xi2));
+    psiLdrv = pPsiLpn2(nrml,x,y);
+    temp = 0.25*INTWGTS[n]*INTWGTS[m]*rho*vertCrossProd*psiLdrv;
+    return temp;
+}
+
+__device__ float c_l_sgl1(const cartCoord x, const cartCoord p1, const cartCoord p2, 
+        const cartCoord p3, const int n, const int m) {
+    float xi1, xi2, rho, theta, vertCrossProd, temp;
+    float eta1 = INTPNTS[m], eta2 = INTPNTS[n];
+    cartCoord y, nrml, crossProd;
+    float psiLdrv;
+    rho = 0.5+0.5*eta1;
+    theta = 0.5+0.5*eta2;
+    xi1 = 1-rho;
+    xi2 = rho*(1-theta);
+    crossProd = (p1-p3)*(p2-p3);
+    vertCrossProd = crossProd.nrm2();
+    nrml = crossProd.nrmlzd();
+    y = xiToElem(p1,p2,p3,cartCoord2D(xi1,xi2));
+    psiLdrv = pPsiLpn2(nrml,x,y);
+    temp = 0.25*INTWGTS[n]*INTWGTS[m]*rho*vertCrossProd*psiLdrv;
+    return temp;
+}
+
+__device__ float c_l_sgl2(const cartCoord x, const cartCoord p1, const cartCoord p2, 
+        const cartCoord p3, const int n, const int m) {
+    float xi1, xi2, rho, theta, vertCrossProd, temp;
+    float eta1 = INTPNTS[m], eta2 = INTPNTS[n];
+    cartCoord y, nrml, crossProd;
+    float psiLdrv;
+    rho = 0.5+0.5*eta1;
+    theta = 0.5+0.5*eta2;
+    xi1 = rho*theta;
+    xi2 = 1-rho;
+    crossProd = (p1-p3)*(p2-p3);
+    vertCrossProd = crossProd.nrm2();
+    nrml = crossProd.nrmlzd();
+    y = xiToElem(p1,p2,p3,cartCoord2D(xi1,xi2));
+    psiLdrv = pPsiLpn2(nrml,x,y);
+    temp = 0.25*INTWGTS[n]*INTWGTS[m]*rho*vertCrossProd*psiLdrv;
+    return temp;
+}
+
+__device__ float c_l_sgl3(const cartCoord x, const cartCoord p1, const cartCoord p2, 
         const cartCoord p3, const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, temp;
     float eta1 = INTPNTS[m], eta2 = INTPNTS[n];
@@ -669,11 +726,103 @@ __global__ void pntsElem_lnm_nsgl(const float k, const int l, const int n, const
         gCoeffs[3*idx+1] = gContrs[1];
         gCoeffs[3*idx+2] = gContrs[2];
         
-        cContr = c_l(pnts[idx],pnts[elem.nodes[0]],pnts[elem.nodes[1]],pnts[elem.nodes[2]],
+        cContr = c_l_nsgl(pnts[idx],pnts[elem.nodes[0]],pnts[elem.nodes[1]],pnts[elem.nodes[2]],
                 n,m);
         cCoeffs[idx] = cContr;
     }
-    //Singularity integral has to be eliminated on the CPU end.
+    //Singularity integral has to be eliminated on the CPU end!
+}
+
+//gCoeffs and hCoeffs are of size 3*numElems, cCoeffs is of size numElems
+__global__ void pntsElems_nm_sgl(const float k, const int n, const int m, const triElem *elems, 
+        const int numElems, const cartCoord *pnts, cuFloatComplex *hCoeffs_sgl1, 
+        cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, cuFloatComplex *gCoeffs_sgl1, 
+        cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, float *cCoeffs_sgl1, 
+        float *cCoeffs_sgl2, float *cCoeffs_sgl3) {
+    int idx = blockIdx.x*blockDim.x+threadIdx.x;
+    if(idx < numElems) {
+        triElem elem = elems[idx];
+        cuFloatComplex h_sgl1[3], h_sgl2[3], h_sgl3[3], g_sgl1[3], g_sgl2[3], g_sgl3[3];
+        float cContr_sgl1, cContr_sgl2, cContr_sgl3;
+        
+        h_sgl1[0] = h_l1_sgl1(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        h_sgl1[1] = h_l2_sgl1(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        h_sgl1[2] = h_l3_sgl1(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        
+        hCoeffs_sgl1[3*idx] = h_sgl1[0];
+        hCoeffs_sgl1[3*idx+1] = h_sgl1[1];
+        hCoeffs_sgl1[3*idx+2] = h_sgl1[2];
+        
+        h_sgl2[0] = h_l1_sgl2(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        h_sgl2[1] = h_l2_sgl2(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        h_sgl2[2] = h_l3_sgl2(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        
+        hCoeffs_sgl2[3*idx] = h_sgl2[0];
+        hCoeffs_sgl2[3*idx+1] = h_sgl2[1];
+        hCoeffs_sgl2[3*idx+2] = h_sgl2[2];
+        
+        h_sgl3[0] = h_l1_sgl3(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        h_sgl3[1] = h_l2_sgl3(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        h_sgl3[2] = h_l3_sgl3(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        
+        hCoeffs_sgl3[3*idx] = h_sgl3[0];
+        hCoeffs_sgl3[3*idx+1] = h_sgl3[1];
+        hCoeffs_sgl3[3*idx+2] = h_sgl3[2];
+        
+        g_sgl1[0] = g_l1_sgl1(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        g_sgl1[1] = g_l2_sgl1(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        g_sgl1[2] = g_l3_sgl1(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        
+        gCoeffs_sgl1[3*idx] = g_sgl1[0];
+        gCoeffs_sgl1[3*idx+1] = g_sgl1[1];
+        gCoeffs_sgl1[3*idx+2] = g_sgl1[2];
+        
+        g_sgl2[0] = g_l1_sgl2(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        g_sgl2[1] = g_l2_sgl2(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        g_sgl2[2] = g_l3_sgl2(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        
+        gCoeffs_sgl2[3*idx] = g_sgl2[0];
+        gCoeffs_sgl2[3*idx+1] = g_sgl2[1];
+        gCoeffs_sgl2[3*idx+2] = g_sgl2[2];
+        
+        g_sgl3[0] = g_l1_sgl3(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        g_sgl3[1] = g_l2_sgl3(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        g_sgl3[2] = g_l3_sgl3(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        
+        gCoeffs_sgl3[3*idx] = g_sgl3[0];
+        gCoeffs_sgl3[3*idx+1] = g_sgl3[1];
+        gCoeffs_sgl3[3*idx+2] = g_sgl3[2];
+        
+        cContr_sgl1 = c_l_sgl1(pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        cCoeffs_sgl1[idx] = cContr_sgl1;
+        
+        cContr_sgl2 = c_l_sgl2(pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        cCoeffs_sgl2[idx] = cContr_sgl2;
+        
+        cContr_sgl3 = c_l_sgl3(pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        cCoeffs_sgl3[idx] = cContr_sgl3;
+    }
 }
 
 __host__ __device__ float trnglArea(const cartCoord p1, const cartCoord p2) {
@@ -1054,6 +1203,7 @@ int mesh::meshCloudToGPU(cartCoord **pPnts_d,triElem **pElems_d) {
         CUDA_CALL(cudaMalloc(pElems_d,numElems*sizeof(triElem)));
         CUDA_CALL(cudaMemcpy(*pElems_d,elems,numElems*sizeof(triElem),cudaMemcpyHostToDevice));
     }
+    
     return EXIT_SUCCESS;
 }
 
