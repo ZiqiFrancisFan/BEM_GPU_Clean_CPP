@@ -70,6 +70,10 @@ class cartCoord {
     
     friend __host__ __device__ float pPsiLpn2(const cartCoord,const cartCoord,const cartCoord);
     
+    friend __global__ void pntsElem_lnm_nsgl(const float k, const int l, const int n, const int m, 
+        const triElem *elems, const cartCoord *pnts, const int numPnts, 
+        cuFloatComplex *hCoeffs, cuFloatComplex *gCoeffs, float *cCoeffs);
+    
     friend class mesh;
 private:
     float coords[3];
@@ -129,22 +133,33 @@ __host__ __device__ float pPsiLpn2(const cartCoord,const cartCoord,const cartCoo
 //class triElem
 class triElem {
     friend ostream& operator<<(ostream&,const triElem&);
+    
     friend __global__ void test(cartCoord *pnts, triElem *elems);
+    
     friend __global__ void rayTrnglsInt(const cartCoord,const cartCoord,
     const cartCoord*,const triElem*,const int,bool*);
+    
+    friend __global__ void pntsElem_lnm_nsgl(const float k, const int l, const int n, const int m, 
+        const triElem *elems, const cartCoord *pnts, const int numPnts, 
+        cuFloatComplex *hCoeffs, cuFloatComplex *gCoeffs, float *cCoeffs);
+    
     friend class mesh;
 private:
     int nodes[3];
     cuFloatComplex bc[3];
     
 public:
-    triElem() = default;
-    triElem(const triElem&);
-    ~triElem() = default;
-    triElem& operator=(const triElem&);
+    __host__ __device__ triElem() {}
+    __host__ __device__ triElem(const triElem&);
+    __host__ __device__ ~triElem() {}
+    __host__ __device__ triElem& operator=(const triElem&);
 };
 
 ostream& operator<<(ostream&,const triElem&);
+
+__global__ void pntsElem_lnm_nsgl(const float k, const int l, const int n, const int m, 
+        const triElem *elems, const cartCoord *pnts, const int numPnts, 
+        cuFloatComplex *hCoeffs, cuFloatComplex *gCoeffs, float *cCoeffs);
 
 //class mesh
 class mesh {
@@ -176,6 +191,7 @@ public:
     int genCHIEF(const int,const float);
     void printBB();
     int chiefToGPU(cartCoord**);
+    int meshToGPU(cartCoord**,triElem**);
 };
 
 ostream& operator<<(ostream&,const mesh&);
@@ -345,6 +361,9 @@ __device__ cuFloatComplex h_l2_sgl3(const float k, const cartCoord x,
 __device__ cuFloatComplex h_l3_sgl3(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m);
+
+__device__ float c_l(const cartCoord x, const cartCoord p1, const cartCoord p2, 
+        const cartCoord p3, const int n, const int m);
 
 
 

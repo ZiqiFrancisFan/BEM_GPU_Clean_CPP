@@ -619,6 +619,63 @@ __device__ cuFloatComplex h_l3_sgl3(const float k, const cartCoord x,
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
 }
 
+__device__ float c_l(const cartCoord x, const cartCoord p1, const cartCoord p2, 
+        const cartCoord p3, const int n, const int m) {
+    float xi1, xi2, rho, theta, vertCrossProd, temp;
+    float eta1 = INTPNTS[m], eta2 = INTPNTS[n];
+    cartCoord y, nrml, crossProd;
+    float psiLdrv;
+    rho = 0.5+0.5*eta1;
+    theta = 0.5+0.5*eta2;
+    xi1 = rho*(1-theta);
+    xi2 = rho*theta;
+    crossProd = (p1-p3)*(p2-p3);
+    vertCrossProd = crossProd.nrm2();
+    nrml = crossProd.nrmlzd();
+    y = xiToElem(p1,p2,p3,cartCoord2D(xi1,xi2));
+    psiLdrv = pPsiLpn2(nrml,x,y);
+    temp = 0.25*INTWGTS[n]*INTWGTS[m]*rho*vertCrossProd*psiLdrv;
+    return temp;
+}
+
+//hCoeffs is of size 3*numPnts and cCoeffs is of size numPnts
+__global__ void pntsElem_lnm_nsgl(const float k, const int l, const int n, const int m, 
+        const triElem *elems, const cartCoord *pnts, const int numPnts, 
+        cuFloatComplex *hCoeffs, cuFloatComplex *gCoeffs, float *cCoeffs) {
+    int idx = blockIdx.x*blockDim.x+threadIdx.x;
+    if(idx < numPnts) {
+        triElem elem = elems[l];
+        cuFloatComplex hContrs[3], gContrs[3];
+        float cContr;
+        hContrs[0] = h_l1_nsgl(k,pnts[idx],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        hContrs[1] = h_l2_nsgl(k,pnts[idx],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        hContrs[2] = h_l3_nsgl(k,pnts[idx],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        
+        hCoeffs[3*idx] = hContrs[0];
+        hCoeffs[3*idx+1] = hContrs[1];
+        hCoeffs[3*idx+2] = hContrs[2];
+        
+        gContrs[0] = g_l1_nsgl(k,pnts[idx],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        gContrs[1] = g_l2_nsgl(k,pnts[idx],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        gContrs[2] = g_l3_nsgl(k,pnts[idx],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        
+        gCoeffs[3*idx] = gContrs[0];
+        gCoeffs[3*idx+1] = gContrs[1];
+        gCoeffs[3*idx+2] = gContrs[2];
+        
+        cContr = c_l(pnts[idx],pnts[elem.nodes[0]],pnts[elem.nodes[1]],pnts[elem.nodes[2]],
+                n,m);
+        cCoeffs[idx] = cContr;
+    }
+    //Singularity integral has to be eliminated on the CPU end.
+}
+
 __host__ __device__ float trnglArea(const cartCoord p1, const cartCoord p2) {
     cartCoord temp = p1*p2;
     return temp.nrm2()/2.0;
@@ -697,14 +754,14 @@ __host__ __device__ bool rayTrnglInt(const cartCoord sp, const cartCoord dir,
 }
 
 //triangular element class
-triElem::triElem(const triElem &rhs) {
+__host__ __device__ triElem::triElem(const triElem &rhs) {
     for(int i=0;i<3;i++) {
         nodes[i] = rhs.nodes[i];
         bc[i] = rhs.bc[i];
     }
 }
 
-triElem& triElem::operator=(const triElem &rhs) {
+__host__ __device__ triElem& triElem::operator=(const triElem &rhs) {
     for(int i=0;i<3;i++) {
         nodes[i] = rhs.nodes[i];
         bc[i] = rhs.bc[i];
@@ -925,7 +982,6 @@ __global__ void distPntPnts(const cartCoord sp, const cartCoord *pnts, const int
         cartCoord temp = pnts[idx]-sp;
         dists[idx] = temp.nrm2();
     }
-    
 }
 
 int mesh::genCHIEF(const int num, const float threshold) {
@@ -1007,6 +1063,28 @@ int mesh::chiefToGPU(cartCoord **pchiefPnts) {
         CUDA_CALL(cudaMemcpy(*pchiefPnts,chiefPnts,numCHIEF*sizeof(cartCoord),cudaMemcpyHostToDevice));
     }
     return EXIT_SUCCESS;
+}
+
+int mesh::meshToGPU(cartCoord **pPnts_d, triElem **pElems_d) {
+    if(numPnts==0 || numElems==0 || numCHIEF==0) {
+        cout << "The mesh object is incomplete." << endl;
+        return EXIT_FAILURE;
+    } else {
+        int i;
+        cartCoord *pnts_h = new cartCoord[numPnts+numCHIEF];
+        for(i=0;i<numPnts;i++) {
+            pnts_h[i] = pnts[i];
+        }
+        for(i=0;i<numCHIEF;i++) {
+            pnts_h[numPnts+i] = chiefPnts[i];
+        }
+        CUDA_CALL(cudaMalloc(pPnts_d,(numPnts+numCHIEF)*sizeof(cartCoord)));
+        CUDA_CALL(cudaMemcpy(pPnts_d,pnts_h,(numPnts+numCHIEF)*sizeof(cartCoord),cudaMemcpyHostToDevice));
+        
+        CUDA_CALL(cudaMalloc(pElems_d,numElems*sizeof(triElem)));
+        CUDA_CALL(cudaMemcpy(pElems_d,elems,numElems*sizeof(triElem),cudaMemcpyHostToDevice));
+        return EXIT_SUCCESS;
+    }
 }
 
 //cartCoord2D
