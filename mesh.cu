@@ -147,6 +147,19 @@ __device__ cuFloatComplex g_lnm_1_nsgl(const float k, const cartCoord x,
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g)); //the imag part
 }
 
+__device__ cuFloatComplex g_l_1_nsgl(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = g_lnm_1_nsgl(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
+}
+
 __device__ cuFloatComplex g_lnm_2_nsgl(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
@@ -167,6 +180,19 @@ __device__ cuFloatComplex g_lnm_2_nsgl(const float k, const cartCoord x,
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g)); //the imag part
 }
 
+__device__ cuFloatComplex g_l_2_nsgl(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = g_lnm_2_nsgl(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
+}
+
 __device__ cuFloatComplex g_lnm_3_nsgl(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
@@ -185,6 +211,19 @@ __device__ cuFloatComplex g_lnm_3_nsgl(const float k, const cartCoord x,
     g = green2(k,x,y);
     temp = 0.25*INTWGTS[n]*INTWGTS[m]*rho*N*vertCrossProd*density*omega;
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g)); //the imag part
+}
+
+__device__ cuFloatComplex g_l_3_nsgl(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = g_lnm_3_nsgl(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
 }
 
 __device__ cuFloatComplex h_lnm_1_nsgl(const float k, const cartCoord x, 
@@ -208,6 +247,20 @@ __device__ cuFloatComplex h_lnm_1_nsgl(const float k, const cartCoord x,
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
 }
 
+__device__ cuFloatComplex h_l_1_nsgl(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = h_lnm_1_nsgl(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
+}
+
+
 __device__ cuFloatComplex h_lnm_2_nsgl(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
@@ -227,7 +280,20 @@ __device__ cuFloatComplex h_lnm_2_nsgl(const float k, const cartCoord x,
     gDrv = pGpn2(k,nrml,x,y);
     temp = 0.25*INTWGTS[n]*INTWGTS[m]*rho*N*vertCrossProd;
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
-} 
+}
+
+__device__ cuFloatComplex h_l_2_nsgl(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = h_lnm_2_nsgl(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
+}
 
 __device__ cuFloatComplex h_lnm_3_nsgl(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
@@ -248,7 +314,20 @@ __device__ cuFloatComplex h_lnm_3_nsgl(const float k, const cartCoord x,
     gDrv = pGpn2(k,nrml,x,y);
     temp = 0.25*INTWGTS[n]*INTWGTS[m]*rho*N*vertCrossProd;
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
-} 
+}
+
+__device__ cuFloatComplex h_l_3_nsgl(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = h_lnm_3_nsgl(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
+}
 
 __device__ cuFloatComplex g_lnm_1_sgl1(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
@@ -268,6 +347,19 @@ __device__ cuFloatComplex g_lnm_1_sgl1(const float k, const cartCoord x,
     g = green2(k,x,y);
     temp = 0.25*INTWGTS[n]*INTWGTS[m]*rho*N*vertCrossProd*density*omega;
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g));
+}
+
+__device__ cuFloatComplex g_l_1_sgl1(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = g_lnm_1_sgl1(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
 }
 
 __device__ cuFloatComplex g_lnm_2_sgl1(const float k, const cartCoord x, 
@@ -290,6 +382,19 @@ __device__ cuFloatComplex g_lnm_2_sgl1(const float k, const cartCoord x,
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g));
 }
 
+__device__ cuFloatComplex g_l_2_sgl1(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = g_lnm_2_sgl1(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
+}
+
 __device__ cuFloatComplex g_lnm_3_sgl1(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
@@ -308,6 +413,19 @@ __device__ cuFloatComplex g_lnm_3_sgl1(const float k, const cartCoord x,
     g = green2(k,x,y);
     temp = 0.25*INTWGTS[n]*INTWGTS[m]*rho*N*vertCrossProd*density*omega;
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g));
+}
+
+__device__ cuFloatComplex g_l_3_sgl1(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = g_lnm_3_sgl1(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
 }
 
 __device__ cuFloatComplex g_lnm_1_sgl2(const float k, const cartCoord x, 
@@ -330,6 +448,19 @@ __device__ cuFloatComplex g_lnm_1_sgl2(const float k, const cartCoord x,
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g));
 }
 
+__device__ cuFloatComplex g_l_1_sgl2(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = g_lnm_1_sgl2(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
+}
+
 __device__ cuFloatComplex g_lnm_2_sgl2(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
@@ -348,6 +479,19 @@ __device__ cuFloatComplex g_lnm_2_sgl2(const float k, const cartCoord x,
     g = green2(k,x,y);
     temp = 0.25*INTWGTS[n]*INTWGTS[m]*rho*N*vertCrossProd*density*omega;
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g));
+}
+
+__device__ cuFloatComplex g_l_2_sgl2(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = g_lnm_2_sgl2(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
 }
 
 __device__ cuFloatComplex g_lnm_3_sgl2(const float k, const cartCoord x, 
@@ -370,6 +514,19 @@ __device__ cuFloatComplex g_lnm_3_sgl2(const float k, const cartCoord x,
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g));
 }
 
+__device__ cuFloatComplex g_l_3_sgl2(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = g_lnm_3_sgl2(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
+}
+
 __device__ cuFloatComplex g_lnm_1_sgl3(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
@@ -388,6 +545,19 @@ __device__ cuFloatComplex g_lnm_1_sgl3(const float k, const cartCoord x,
     g = green2(k,x,y);
     temp = 0.25*INTWGTS[n]*INTWGTS[m]*rho*N*vertCrossProd*density*omega;
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g));
+}
+
+__device__ cuFloatComplex g_l_1_sgl3(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = g_lnm_1_sgl3(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
 }
 
 __device__ cuFloatComplex g_lnm_2_sgl3(const float k, const cartCoord x, 
@@ -410,6 +580,19 @@ __device__ cuFloatComplex g_lnm_2_sgl3(const float k, const cartCoord x,
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g));
 }
 
+__device__ cuFloatComplex g_l_2_sgl3(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = g_lnm_2_sgl3(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
+}
+
 __device__ cuFloatComplex g_lnm_3_sgl3(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
@@ -428,6 +611,19 @@ __device__ cuFloatComplex g_lnm_3_sgl3(const float k, const cartCoord x,
     g = green2(k,x,y);
     temp = 0.25*INTWGTS[n]*INTWGTS[m]*rho*N*vertCrossProd*density*omega;
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g));
+}
+
+__device__ cuFloatComplex g_l_3_sgl3(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = g_lnm_3_sgl3(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
 }
 
 __device__ cuFloatComplex h_lnm_1_sgl1(const float k, const cartCoord x, 
@@ -451,6 +647,19 @@ __device__ cuFloatComplex h_lnm_1_sgl1(const float k, const cartCoord x,
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
 }
 
+__device__ cuFloatComplex h_l_1_sgl1(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = h_lnm_1_sgl1(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
+}
+
 __device__ cuFloatComplex h_lnm_2_sgl1(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
@@ -470,6 +679,19 @@ __device__ cuFloatComplex h_lnm_2_sgl1(const float k, const cartCoord x,
     gDrv = pGpn2(k,nrml,x,y);
     temp = 0.25*INTWGTS[n]*INTWGTS[m]*rho*N*vertCrossProd;
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
+}
+
+__device__ cuFloatComplex h_l_2_sgl1(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = h_lnm_2_sgl1(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
 }
 
 __device__ cuFloatComplex h_lnm_3_sgl1(const float k, const cartCoord x, 
@@ -493,6 +715,19 @@ __device__ cuFloatComplex h_lnm_3_sgl1(const float k, const cartCoord x,
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
 }
 
+__device__ cuFloatComplex h_l_3_sgl1(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = h_lnm_3_sgl1(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
+}
+
 __device__ cuFloatComplex h_lnm_1_sgl2(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
@@ -512,6 +747,19 @@ __device__ cuFloatComplex h_lnm_1_sgl2(const float k, const cartCoord x,
     gDrv = pGpn2(k,nrml,x,y);
     temp = 0.25*INTWGTS[n]*INTWGTS[m]*rho*N*vertCrossProd;
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
+}
+
+__device__ cuFloatComplex h_l_1_sgl2(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = h_lnm_1_sgl2(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
 }
 
 __device__ cuFloatComplex h_lnm_2_sgl2(const float k, const cartCoord x, 
@@ -535,6 +783,19 @@ __device__ cuFloatComplex h_lnm_2_sgl2(const float k, const cartCoord x,
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
 }
 
+__device__ cuFloatComplex h_l_2_sgl2(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = h_lnm_2_sgl2(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
+}
+
 __device__ cuFloatComplex h_lnm_3_sgl2(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
@@ -554,6 +815,19 @@ __device__ cuFloatComplex h_lnm_3_sgl2(const float k, const cartCoord x,
     gDrv = pGpn2(k,nrml,x,y);
     temp = 0.25*INTWGTS[n]*INTWGTS[m]*rho*N*vertCrossProd;
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
+}
+
+__device__ cuFloatComplex h_l_3_sgl2(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = h_lnm_3_sgl2(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
 }
 
 __device__ cuFloatComplex h_lnm_1_sgl3(const float k, const cartCoord x, 
@@ -577,6 +851,19 @@ __device__ cuFloatComplex h_lnm_1_sgl3(const float k, const cartCoord x,
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
 }
 
+__device__ cuFloatComplex h_l_1_sgl3(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = h_lnm_1_sgl3(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
+}
+
 __device__ cuFloatComplex h_lnm_2_sgl3(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
@@ -598,6 +885,19 @@ __device__ cuFloatComplex h_lnm_2_sgl3(const float k, const cartCoord x,
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
 }
 
+__device__ cuFloatComplex h_l_2_sgl3(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = h_lnm_2_sgl3(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
+}
+
 __device__ cuFloatComplex h_lnm_3_sgl3(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
@@ -617,6 +917,19 @@ __device__ cuFloatComplex h_lnm_3_sgl3(const float k, const cartCoord x,
     gDrv = pGpn2(k,nrml,x,y);
     temp = 0.25*INTWGTS[n]*INTWGTS[m]*rho*N*vertCrossProd;
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
+}
+
+__device__ cuFloatComplex h_l_3_sgl3(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3) {
+    cuFloatComplex g = make_cuFloatComplex(0,0), tempG;
+    int n, m;
+    for(n=0;n<INTORDER;n++) {
+        for(m=0;m<INTORDER;m++) {
+            tempG = h_lnm_3_sgl3(k,x,p1,p2,p3,n,m);
+            g = cuCaddf(g,tempG);
+        }
+    }
+    return g;
 }
 
 __device__ float c_l_nsgl(const cartCoord x, const cartCoord p1, const cartCoord p2, 

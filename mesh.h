@@ -422,5 +422,77 @@ __global__ void updateSystemLhs_hg_sgl(cuFloatComplex *A,
 
 __global__ void updateSystemLhs_c_sgl(cuFloatComplex *A, const int lda, float *cCoeffs_sgl1, 
         float *cCoeffs_sgl2, float *cCoeffs_sgl3, const triElem *elems, const int numElems);
+
+__device__ cuFloatComplex g_l_1_nsgl(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex g_l_2_nsgl(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex g_l_3_nsgl(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex h_l_1_nsgl(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex h_l_2_nsgl(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex h_l_3_nsgl(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex g_l_1_sgl1(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex g_l_2_sgl1(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex g_l_3_sgl1(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex g_l_1_sgl2(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex g_l_2_sgl2(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex g_l_3_sgl2(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex g_l_1_sgl3(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex g_l_2_sgl3(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex g_l_3_sgl3(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex h_l_1_sgl1(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex h_l_2_sgl1(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex h_l_3_sgl1(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex h_l_1_sgl2(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex h_l_2_sgl2(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex h_l_3_sgl2(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex h_l_1_sgl3(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex h_l_2_sgl3(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
+
+__device__ cuFloatComplex h_l_3_sgl3(const float k, const cartCoord x, 
+        const cartCoord p1, const cartCoord p2, const cartCoord p3);
 #endif /* MESH_H */
 
