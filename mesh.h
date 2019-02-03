@@ -166,10 +166,13 @@ class triElem {
         const int ldb, const int srcIdx, const cuFloatComplex *gCoeffs, const triElem *elems, 
         const int l);
     
-    friend __global__ void updateSystemLhs_hg_sgl(cuFloatComplex *A, const int numPnts, const int numCHIEF, 
+    friend __global__ void updateSystemLhs_hg_sgl(cuFloatComplex *A, 
         const int lda, cuFloatComplex *hCoeffs_sgl1, cuFloatComplex *hCoeffs_sgl2, 
         cuFloatComplex *hCoeffs_sgl3, cuFloatComplex *gCoeffs_sgl1, cuFloatComplex *gCoeffs_sgl2, 
         cuFloatComplex *gCoeffs_sgl3, const triElem *elems, const int numElems);
+    
+    friend __global__ void updateSystemLhs_c_sgl(cuFloatComplex *A, const int lda, float *cCoeffs_sgl1, 
+        float *cCoeffs_sgl2, float *cCoeffs_sgl3, const triElem *elems, const int numElems);
     
     friend class mesh;
 private:
@@ -412,9 +415,12 @@ __global__ void updateSystemRhs_nsgl(cuFloatComplex *B, const int numPnts, const
         const int ldb, const int srcIdx, const cuFloatComplex *gCoeffs, const triElem *elems, 
         const int l);
 
-__global__ void updateSystemLhs_hg_sgl(cuFloatComplex *A, const int numPnts, const int numCHIEF, 
+__global__ void updateSystemLhs_hg_sgl(cuFloatComplex *A, 
         const int lda, cuFloatComplex *hCoeffs_sgl1, cuFloatComplex *hCoeffs_sgl2, 
         cuFloatComplex *hCoeffs_sgl3, cuFloatComplex *gCoeffs_sgl1, cuFloatComplex *gCoeffs_sgl2, 
         cuFloatComplex *gCoeffs_sgl3, const triElem *elems, const int numElems);
+
+__global__ void updateSystemLhs_c_sgl(cuFloatComplex *A, const int lda, float *cCoeffs_sgl1, 
+        float *cCoeffs_sgl2, float *cCoeffs_sgl3, const triElem *elems, const int numElems);
 #endif /* MESH_H */
 

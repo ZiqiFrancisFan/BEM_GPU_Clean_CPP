@@ -890,10 +890,10 @@ __global__ void updateSystemRhs_nsgl(cuFloatComplex *B, const int numPnts, const
 
 
 //Updated in an n and m loop
-__global__ void updateSystemLhs_hg_sgl(cuFloatComplex *A, const int numPnts, const int numCHIEF, 
-        const int lda, cuFloatComplex *hCoeffs_sgl1, cuFloatComplex *hCoeffs_sgl2, 
-        cuFloatComplex *hCoeffs_sgl3, cuFloatComplex *gCoeffs_sgl1, cuFloatComplex *gCoeffs_sgl2, 
-        cuFloatComplex *gCoeffs_sgl3, const triElem *elems, const int numElems) {
+__global__ void updateSystemLhs_hg_sgl(cuFloatComplex *A, const int lda, 
+        cuFloatComplex *hCoeffs_sgl1, cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, 
+        cuFloatComplex *gCoeffs_sgl1, cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, 
+        const triElem *elems, const int numElems) {
     int idx = blockIdx.x*blockDim.x+threadIdx.x;
     if(idx < numElems) {
         triElem elem = elems[idx];
@@ -970,6 +970,27 @@ __global__ void updateSystemLhs_hg_sgl(cuFloatComplex *A, const int numPnts, con
                 pContrs_sgl3[1]);
         A[IDXC0(elem.nodes[2],elem.nodes[2],lda)] = cuCaddf(A[IDXC0(elem.nodes[2],elem.nodes[2],lda)],
                 pContrs_sgl3[2]);
+    }
+}
+
+__global__ void updateSystemLhs_c_sgl(cuFloatComplex *A, const int lda, float *cCoeffs_sgl1, 
+        float *cCoeffs_sgl2, float *cCoeffs_sgl3, const triElem *elems, const int numElems) {
+    int idx = blockIdx.x*blockDim.x+threadIdx.x;
+    if(idx < numElems) {
+        triElem elem = elems[idx];
+        float cContr_sgl1, cContr_sgl2, cContr_sgl3;
+        
+        cContr_sgl1 = cCoeffs_sgl1[idx];
+        A[IDXC0(elem.nodes[0],elem.nodes[0],lda)] = cuCsubf(A[IDXC0(elem.nodes[0],elem.nodes[0],lda)],
+                make_cuFloatComplex(cContr_sgl1,0));
+        
+        cContr_sgl2 = cCoeffs_sgl2[idx];
+        A[IDXC0(elem.nodes[1],elem.nodes[1],lda)] = cuCsubf(A[IDXC0(elem.nodes[1],elem.nodes[1],lda)],
+                make_cuFloatComplex(cContr_sgl2,0));
+        
+        cContr_sgl3 = cCoeffs_sgl3[idx];
+        A[IDXC0(elem.nodes[2],elem.nodes[2],lda)] = cuCsubf(A[IDXC0(elem.nodes[2],elem.nodes[2],lda)],
+                make_cuFloatComplex(cContr_sgl3,0));
     }
 }
 
