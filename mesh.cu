@@ -793,22 +793,13 @@ __global__ void updateSystemLhs_hg_nsgl(cuFloatComplex *A, const int numPnts, co
     int idx = blockIdx.x*blockDim.x+threadIdx.x;
     if(idx < numPnts+numCHIEF) {
         triElem elem = elems[l];
-        cuFloatComplex hContrs[3], gContrs[3]; 
         cuFloatComplex pContrs[3], bc;
         
         bc = cuCdivf(elem.bc[0],elem.bc[1]);
         
-        hContrs[0] = hCoeffs[3*idx];
-        hContrs[1] = hCoeffs[3*idx+1];
-        hContrs[2] = hCoeffs[3*idx+2];
-        
-        gContrs[0] = gCoeffs[3*idx];
-        gContrs[1] = gCoeffs[3*idx+1];
-        gContrs[2] = gCoeffs[3*idx+2];
-        
-        pContrs[0] = cuCsubf(hContrs[0],cuCmulf(bc,gContrs[0]));
-        pContrs[1] = cuCsubf(hContrs[1],cuCmulf(bc,gContrs[1]));
-        pContrs[2] = cuCsubf(hContrs[2],cuCmulf(bc,gContrs[2]));
+        pContrs[0] = cuCsubf(hCoeffs[3*idx],cuCmulf(bc,gCoeffs[3*idx]));
+        pContrs[1] = cuCsubf(hCoeffs[3*idx+1],cuCmulf(bc,gCoeffs[3*idx+1]));
+        pContrs[2] = cuCsubf(hCoeffs[3*idx+2],cuCmulf(bc,gCoeffs[3*idx+2]));
         
         A[IDXC0(idx,elem.nodes[0],lda)] = cuCaddf(A[IDXC0(idx,elem.nodes[0],lda)],pContrs[0]);
         A[IDXC0(idx,elem.nodes[1],lda)] = cuCaddf(A[IDXC0(idx,elem.nodes[1],lda)],pContrs[1]);
@@ -826,31 +817,29 @@ __global__ void updateSystemLhs_c_nsgl(cuFloatComplex *A, const int numPnts, con
     }
 }
 
-//Updated in an n and m loop
+//Updated in an n and m loop, should be iterated over all sources
 __global__ void updateSystemRhs_nsgl(cuFloatComplex *B, const int numPnts, const int numCHIEF, 
         const int ldb, const int srcIdx, const cuFloatComplex *gCoeffs, const triElem *elems, 
         const int l) {
     int idx = blockIdx.x*blockDim.x+threadIdx.x;
     if(idx < numPnts+numCHIEF) {
-        cuFloatComplex gContrs[3], bc, temp;
-        gContrs[0] = gCoeffs[3*idx];
-        gContrs[1] = gCoeffs[3*idx+1];
-        gContrs[2] = gCoeffs[3*idx+2];
-        
         triElem elem = elems[l];
+        cuFloatComplex bc, temp;
+        
         bc = cuCdivf(elem.bc[2],elem.bc[1]);
         
-        temp = cuCmulf(bc,gContrs[0]);
+        temp = cuCmulf(bc,gCoeffs[3*idx]);
         B[IDXC0(idx,srcIdx,ldb)] = cuCsubf(B[IDXC0(idx,srcIdx,ldb)],temp);
-        temp = cuCmulf(bc,gContrs[1]);
+        temp = cuCmulf(bc,gCoeffs[3*idx+1]);
         B[IDXC0(idx,srcIdx,ldb)] = cuCsubf(B[IDXC0(idx,srcIdx,ldb)],temp);
-        temp = cuCmulf(bc,gContrs[2]);
+        temp = cuCmulf(bc,gCoeffs[3*idx+2]);
         B[IDXC0(idx,srcIdx,ldb)] = cuCsubf(B[IDXC0(idx,srcIdx,ldb)],temp);
     }
 }
 
 
 //Updated in an n and m loop
+//has bugs, memory access conflict
 __global__ void updateSystemLhs_hg_sgl(cuFloatComplex *A, const int lda, 
         cuFloatComplex *hCoeffs_sgl1, cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, 
         cuFloatComplex *gCoeffs_sgl1, cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, 
@@ -858,79 +847,56 @@ __global__ void updateSystemLhs_hg_sgl(cuFloatComplex *A, const int lda,
     int idx = blockIdx.x*blockDim.x+threadIdx.x;
     if(idx < numElems) {
         triElem elem = elems[idx];
-        cuFloatComplex hContrs_sgl1[3], hContrs_sgl2[3], hContrs_sgl3[3], 
-                gContrs_sgl1[3], gContrs_sgl2[3], gContrs_sgl3[3], 
-                pContrs_sgl1[3], pContrs_sgl2[3], pContrs_sgl3[3];
+        cuFloatComplex pContrs[3];
         cuFloatComplex temp, bc = cuCdivf(elem.bc[0],elem.bc[1]);
         
         //singular 1:
-        hContrs_sgl1[0] = hCoeffs_sgl1[3*idx];
-        hContrs_sgl1[1] = hCoeffs_sgl1[3*idx+1];
-        hContrs_sgl1[2] = hCoeffs_sgl1[3*idx+2];
         
-        gContrs_sgl1[0] = gCoeffs_sgl1[3*idx];
-        gContrs_sgl1[1] = gCoeffs_sgl1[3*idx+1];
-        gContrs_sgl1[2] = gCoeffs_sgl1[3*idx+2];
-        
-        temp = cuCmulf(bc,gContrs_sgl1[0]);
-        pContrs_sgl1[0] = cuCsubf(hContrs_sgl1[0],temp);
-        temp = cuCmulf(bc,gContrs_sgl1[1]);
-        pContrs_sgl1[1] = cuCsubf(hContrs_sgl1[1],temp);
-        temp = cuCmulf(bc,gContrs_sgl1[2]);
-        pContrs_sgl1[2] = cuCsubf(hContrs_sgl1[2],temp);
+        temp = cuCmulf(bc,gCoeffs_sgl1[3*idx]);
+        pContrs[0] = cuCsubf(hCoeffs_sgl1[3*idx],temp);
+        temp = cuCmulf(bc,gCoeffs_sgl1[3*idx+1]);
+        pContrs[1] = cuCsubf(hCoeffs_sgl1[3*idx+1],temp);
+        temp = cuCmulf(bc,gCoeffs_sgl1[3*idx+2]);
+        pContrs[2] = cuCsubf(hCoeffs_sgl1[3*idx+2],temp);
         
         A[IDXC0(elem.nodes[0],elem.nodes[0],lda)] = cuCaddf(A[IDXC0(elem.nodes[0],elem.nodes[0],lda)],
-                pContrs_sgl1[0]);
+                pContrs[0]);
         A[IDXC0(elem.nodes[0],elem.nodes[1],lda)] = cuCaddf(A[IDXC0(elem.nodes[0],elem.nodes[1],lda)],
-                pContrs_sgl1[1]);
+                pContrs[1]);
         A[IDXC0(elem.nodes[0],elem.nodes[2],lda)] = cuCaddf(A[IDXC0(elem.nodes[0],elem.nodes[2],lda)],
-                pContrs_sgl1[2]);
+                pContrs[2]);
         
         //singular 2:
-        hContrs_sgl2[0] = hCoeffs_sgl2[3*idx];
-        hContrs_sgl2[1] = hCoeffs_sgl2[3*idx+1];
-        hContrs_sgl2[2] = hCoeffs_sgl2[3*idx+2];
-        
-        gContrs_sgl2[0] = gCoeffs_sgl2[3*idx];
-        gContrs_sgl2[1] = gCoeffs_sgl2[3*idx+1];
-        gContrs_sgl2[2] = gCoeffs_sgl2[3*idx+2];
-        
-        temp = cuCmulf(bc,gContrs_sgl2[0]);
-        pContrs_sgl2[0] = cuCsubf(hContrs_sgl2[0],temp);
-        temp = cuCmulf(bc,gContrs_sgl2[1]);
-        pContrs_sgl2[1] = cuCsubf(hContrs_sgl2[1],temp);
-        temp = cuCmulf(bc,gContrs_sgl1[2]);
-        pContrs_sgl2[2] = cuCsubf(hContrs_sgl2[2],temp);
+     
+        temp = cuCmulf(bc,gCoeffs_sgl2[3*idx]);
+        pContrs[0] = cuCsubf(hCoeffs_sgl2[3*idx],temp);
+        temp = cuCmulf(bc,gCoeffs_sgl2[3*idx+1]);
+        pContrs[1] = cuCsubf(hCoeffs_sgl2[3*idx+1],temp);
+        temp = cuCmulf(bc,gCoeffs_sgl2[3*idx+2]);
+        pContrs[2] = cuCsubf(hCoeffs_sgl2[3*idx+2],temp);
         
         A[IDXC0(elem.nodes[1],elem.nodes[0],lda)] = cuCaddf(A[IDXC0(elem.nodes[1],elem.nodes[0],lda)],
-                pContrs_sgl2[0]);
+                pContrs[0]);
         A[IDXC0(elem.nodes[1],elem.nodes[1],lda)] = cuCaddf(A[IDXC0(elem.nodes[1],elem.nodes[1],lda)],
-                pContrs_sgl2[1]);
+                pContrs[1]);
         A[IDXC0(elem.nodes[1],elem.nodes[2],lda)] = cuCaddf(A[IDXC0(elem.nodes[1],elem.nodes[2],lda)],
-                pContrs_sgl2[2]);
+                pContrs[2]);
         
         //singular 2:
-        hContrs_sgl3[0] = hCoeffs_sgl3[3*idx];
-        hContrs_sgl3[1] = hCoeffs_sgl3[3*idx+1];
-        hContrs_sgl3[2] = hCoeffs_sgl3[3*idx+2];
         
-        gContrs_sgl3[0] = gCoeffs_sgl3[3*idx];
-        gContrs_sgl3[1] = gCoeffs_sgl3[3*idx+1];
-        gContrs_sgl3[2] = gCoeffs_sgl3[3*idx+2];
-        
-        temp = cuCmulf(bc,gContrs_sgl3[0]);
-        pContrs_sgl3[0] = cuCsubf(hContrs_sgl3[0],temp);
-        temp = cuCmulf(bc,gContrs_sgl3[1]);
-        pContrs_sgl3[1] = cuCsubf(hContrs_sgl3[1],temp);
-        temp = cuCmulf(bc,gContrs_sgl3[2]);
-        pContrs_sgl3[2] = cuCsubf(hContrs_sgl3[2],temp);
+        temp = cuCmulf(bc,gCoeffs_sgl3[3*idx]);
+        pContrs[0] = cuCsubf(hCoeffs_sgl3[3*idx],temp);
+        temp = cuCmulf(bc,gCoeffs_sgl3[3*idx+1]);
+        pContrs[1] = cuCsubf(hCoeffs_sgl3[3*idx+1],temp);
+        temp = cuCmulf(bc,gCoeffs_sgl3[3*idx+2]);
+        pContrs[2] = cuCsubf(hCoeffs_sgl3[3*idx+2],temp);
         
         A[IDXC0(elem.nodes[2],elem.nodes[0],lda)] = cuCaddf(A[IDXC0(elem.nodes[2],elem.nodes[0],lda)],
-                pContrs_sgl3[0]);
+                pContrs[0]);
         A[IDXC0(elem.nodes[2],elem.nodes[1],lda)] = cuCaddf(A[IDXC0(elem.nodes[2],elem.nodes[1],lda)],
-                pContrs_sgl3[1]);
+                pContrs[1]);
         A[IDXC0(elem.nodes[2],elem.nodes[2],lda)] = cuCaddf(A[IDXC0(elem.nodes[2],elem.nodes[2],lda)],
-                pContrs_sgl3[2]);
+                pContrs[2]);
     }
 }
 
