@@ -825,6 +825,35 @@ __global__ void pntsElems_nm_sgl(const float k, const int n, const int m, const 
     }
 }
 
+__global__ void updateSystemLhs_nsgl(cuFloatComplex *A, const int numPnts, const int numCHIEF, 
+        const int lda, const cuFloatComplex *hCoeffs, const cuFloatComplex *gCoeffs, 
+        const float *cCoeffs, const triElem *elems, const int l) {
+    int idx = blockIdx.x*blockDim.x+threadIdx.x;
+    if(idx < numPnts+numCHIEF) {
+        triElem elem = elems[l];
+        cuFloatComplex hContrs[3], gContrs[3]; 
+        cuFloatComplex pContrs[3], bc;
+        
+        bc = cuCdivf(elem.bc[0],elem.bc[1]);
+        
+        hContrs[0] = hCoeffs[3*idx];
+        hContrs[1] = hCoeffs[3*idx+1];
+        hContrs[2] = hCoeffs[3*idx+2];
+        
+        gContrs[0] = gCoeffs[3*idx];
+        gContrs[1] = gCoeffs[3*idx+1];
+        gContrs[2] = gCoeffs[3*idx+2];
+        
+        pContrs[0] = cuCsubf(hContrs[0],cuCmulf(bc,gContrs[0]));
+        pContrs[1] = cuCsubf(hContrs[1],cuCmulf(bc,gContrs[1]));
+        pContrs[2] = cuCsubf(hContrs[2],cuCmulf(bc,gContrs[2]));
+        
+        A[IDXC0(idx,elem.nodes[0],lda)] = cuCaddf(A[IDXC0(idx,elem.nodes[0],lda)],pContrs[0]);
+        A[IDXC0(idx,elem.nodes[1],lda)] = cuCaddf(A[IDXC0(idx,elem.nodes[1],lda)],pContrs[1]);
+        A[IDXC0(idx,elem.nodes[2],lda)] = cuCaddf(A[IDXC0(idx,elem.nodes[2],lda)],pContrs[2]);
+    }
+}
+
 __host__ __device__ float trnglArea(const cartCoord p1, const cartCoord p2) {
     cartCoord temp = p1*p2;
     return temp.nrm2()/2.0;
