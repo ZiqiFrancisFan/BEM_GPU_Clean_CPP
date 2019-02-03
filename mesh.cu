@@ -127,7 +127,7 @@ __host__ __device__ cuFloatComplex pGpn2(const float k, const cartCoord n,
     return make_cuFloatComplex(temp4*cuCrealf(temp3),temp4*cuCimagf(temp3));
 }
 
-__device__ cuFloatComplex g_l1_nsgl(const float k, const cartCoord x, 
+__device__ cuFloatComplex g_lnm_1_nsgl(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp, omega = k*speed;
@@ -147,7 +147,7 @@ __device__ cuFloatComplex g_l1_nsgl(const float k, const cartCoord x,
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g)); //the imag part
 }
 
-__device__ cuFloatComplex g_l2_nsgl(const float k, const cartCoord x, 
+__device__ cuFloatComplex g_lnm_2_nsgl(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp, omega = k*speed;
@@ -167,7 +167,7 @@ __device__ cuFloatComplex g_l2_nsgl(const float k, const cartCoord x,
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g)); //the imag part
 }
 
-__device__ cuFloatComplex g_l3_nsgl(const float k, const cartCoord x, 
+__device__ cuFloatComplex g_lnm_3_nsgl(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp, omega = k*speed;
@@ -187,7 +187,7 @@ __device__ cuFloatComplex g_l3_nsgl(const float k, const cartCoord x,
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g)); //the imag part
 }
 
-__device__ cuFloatComplex h_l1_nsgl(const float k, const cartCoord x, 
+__device__ cuFloatComplex h_lnm_1_nsgl(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp;
@@ -208,7 +208,7 @@ __device__ cuFloatComplex h_l1_nsgl(const float k, const cartCoord x,
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
 }
 
-__device__ cuFloatComplex h_l2_nsgl(const float k, const cartCoord x, 
+__device__ cuFloatComplex h_lnm_2_nsgl(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp;
@@ -229,7 +229,7 @@ __device__ cuFloatComplex h_l2_nsgl(const float k, const cartCoord x,
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
 } 
 
-__device__ cuFloatComplex h_l3_nsgl(const float k, const cartCoord x, 
+__device__ cuFloatComplex h_lnm_3_nsgl(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp;
@@ -250,7 +250,7 @@ __device__ cuFloatComplex h_l3_nsgl(const float k, const cartCoord x,
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
 } 
 
-__device__ cuFloatComplex g_l1_sgl1(const float k, const cartCoord x, 
+__device__ cuFloatComplex g_lnm_1_sgl1(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp, omega = k*speed;
@@ -270,7 +270,7 @@ __device__ cuFloatComplex g_l1_sgl1(const float k, const cartCoord x,
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g));
 }
 
-__device__ cuFloatComplex g_l2_sgl1(const float k, const cartCoord x, 
+__device__ cuFloatComplex g_lnm_2_sgl1(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp, omega = k*speed;
@@ -290,7 +290,7 @@ __device__ cuFloatComplex g_l2_sgl1(const float k, const cartCoord x,
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g));
 }
 
-__device__ cuFloatComplex g_l3_sgl1(const float k, const cartCoord x, 
+__device__ cuFloatComplex g_lnm_3_sgl1(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp, omega = k*speed;
@@ -310,7 +310,7 @@ __device__ cuFloatComplex g_l3_sgl1(const float k, const cartCoord x,
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g));
 }
 
-__device__ cuFloatComplex g_l1_sgl2(const float k, const cartCoord x, 
+__device__ cuFloatComplex g_lnm_1_sgl2(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp, omega = k*speed;
@@ -330,7 +330,7 @@ __device__ cuFloatComplex g_l1_sgl2(const float k, const cartCoord x,
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g));
 }
 
-__device__ cuFloatComplex g_l2_sgl2(const float k, const cartCoord x, 
+__device__ cuFloatComplex g_lnm_2_sgl2(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp, omega = k*speed;
@@ -350,7 +350,7 @@ __device__ cuFloatComplex g_l2_sgl2(const float k, const cartCoord x,
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g));
 }
 
-__device__ cuFloatComplex g_l3_sgl2(const float k, const cartCoord x, 
+__device__ cuFloatComplex g_lnm_3_sgl2(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp, omega = k*speed;
@@ -370,7 +370,7 @@ __device__ cuFloatComplex g_l3_sgl2(const float k, const cartCoord x,
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g));
 }
 
-__device__ cuFloatComplex g_l1_sgl3(const float k, const cartCoord x, 
+__device__ cuFloatComplex g_lnm_1_sgl3(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp, omega = k*speed;
@@ -390,7 +390,7 @@ __device__ cuFloatComplex g_l1_sgl3(const float k, const cartCoord x,
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g));
 }
 
-__device__ cuFloatComplex g_l2_sgl3(const float k, const cartCoord x, 
+__device__ cuFloatComplex g_lnm_2_sgl3(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp, omega = k*speed;
@@ -410,7 +410,7 @@ __device__ cuFloatComplex g_l2_sgl3(const float k, const cartCoord x,
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g));
 }
 
-__device__ cuFloatComplex g_l3_sgl3(const float k, const cartCoord x, 
+__device__ cuFloatComplex g_lnm_3_sgl3(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp, omega = k*speed;
@@ -430,7 +430,7 @@ __device__ cuFloatComplex g_l3_sgl3(const float k, const cartCoord x,
     return make_cuFloatComplex(-temp*cuCimagf(g),temp*cuCrealf(g));
 }
 
-__device__ cuFloatComplex h_l1_sgl1(const float k, const cartCoord x, 
+__device__ cuFloatComplex h_lnm_1_sgl1(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp;
@@ -451,7 +451,7 @@ __device__ cuFloatComplex h_l1_sgl1(const float k, const cartCoord x,
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
 }
 
-__device__ cuFloatComplex h_l2_sgl1(const float k, const cartCoord x, 
+__device__ cuFloatComplex h_lnm_2_sgl1(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp;
@@ -472,7 +472,7 @@ __device__ cuFloatComplex h_l2_sgl1(const float k, const cartCoord x,
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
 }
 
-__device__ cuFloatComplex h_l3_sgl1(const float k, const cartCoord x, 
+__device__ cuFloatComplex h_lnm_3_sgl1(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp;
@@ -493,7 +493,7 @@ __device__ cuFloatComplex h_l3_sgl1(const float k, const cartCoord x,
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
 }
 
-__device__ cuFloatComplex h_l1_sgl2(const float k, const cartCoord x, 
+__device__ cuFloatComplex h_lnm_1_sgl2(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp;
@@ -514,7 +514,7 @@ __device__ cuFloatComplex h_l1_sgl2(const float k, const cartCoord x,
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
 }
 
-__device__ cuFloatComplex h_l2_sgl2(const float k, const cartCoord x, 
+__device__ cuFloatComplex h_lnm_2_sgl2(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp;
@@ -535,7 +535,7 @@ __device__ cuFloatComplex h_l2_sgl2(const float k, const cartCoord x,
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
 }
 
-__device__ cuFloatComplex h_l3_sgl2(const float k, const cartCoord x, 
+__device__ cuFloatComplex h_lnm_3_sgl2(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp;
@@ -556,7 +556,7 @@ __device__ cuFloatComplex h_l3_sgl2(const float k, const cartCoord x,
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
 }
 
-__device__ cuFloatComplex h_l1_sgl3(const float k, const cartCoord x, 
+__device__ cuFloatComplex h_lnm_1_sgl3(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp;
@@ -577,7 +577,7 @@ __device__ cuFloatComplex h_l1_sgl3(const float k, const cartCoord x,
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
 }
 
-__device__ cuFloatComplex h_l2_sgl3(const float k, const cartCoord x, 
+__device__ cuFloatComplex h_lnm_2_sgl3(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp;
@@ -598,7 +598,7 @@ __device__ cuFloatComplex h_l2_sgl3(const float k, const cartCoord x,
     return make_cuFloatComplex(temp*cuCrealf(gDrv),temp*cuCimagf(gDrv));
 }
 
-__device__ cuFloatComplex h_l3_sgl3(const float k, const cartCoord x, 
+__device__ cuFloatComplex h_lnm_3_sgl3(const float k, const cartCoord x, 
         const cartCoord p1, const cartCoord p2, const cartCoord p3, 
         const int n, const int m) {
     float xi1, xi2, rho, theta, vertCrossProd, N, temp;
@@ -703,18 +703,18 @@ __global__ void pntsElem_lnm_nsgl(const float k, const int l, const int n, const
     if(idx < numPnts) {
         triElem elem = elems[l]; //get the current element
   
-        hCoeffs[3*idx] = h_l1_nsgl(k,pnts[idx],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        hCoeffs[3*idx] = h_lnm_1_nsgl(k,pnts[idx],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
-        hCoeffs[3*idx+1] = h_l2_nsgl(k,pnts[idx],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        hCoeffs[3*idx+1] = h_lnm_2_nsgl(k,pnts[idx],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
-        hCoeffs[3*idx+2] = h_l3_nsgl(k,pnts[idx],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        hCoeffs[3*idx+2] = h_lnm_3_nsgl(k,pnts[idx],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
         
-        gCoeffs[3*idx] = g_l1_nsgl(k,pnts[idx],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        gCoeffs[3*idx] = g_lnm_1_nsgl(k,pnts[idx],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
-        gCoeffs[3*idx+1] = g_l2_nsgl(k,pnts[idx],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        gCoeffs[3*idx+1] = g_lnm_2_nsgl(k,pnts[idx],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
-        gCoeffs[3*idx+2] = g_l3_nsgl(k,pnts[idx],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        gCoeffs[3*idx+2] = g_lnm_3_nsgl(k,pnts[idx],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
         
         cCoeffs[idx] = c_l_nsgl(pnts[idx],pnts[elem.nodes[0]],pnts[elem.nodes[1]],pnts[elem.nodes[2]],
@@ -733,46 +733,46 @@ __global__ void pntsElems_nm_sgl(const float k, const int n, const int m, const 
     if(idx < numElems) {
         triElem elem = elems[idx];
         
-        hCoeffs_sgl1[3*idx] = h_l1_sgl1(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        hCoeffs_sgl1[3*idx] = h_lnm_1_sgl1(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
-        hCoeffs_sgl1[3*idx+1] = h_l2_sgl1(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        hCoeffs_sgl1[3*idx+1] = h_lnm_2_sgl1(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
-        hCoeffs_sgl1[3*idx+2] = h_l3_sgl1(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
-                pnts[elem.nodes[2]],n,m);
-        
-        hCoeffs_sgl2[3*idx] = h_l1_sgl2(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
-                pnts[elem.nodes[2]],n,m);
-        hCoeffs_sgl2[3*idx+1] = h_l2_sgl2(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
-                pnts[elem.nodes[2]],n,m);
-        hCoeffs_sgl2[3*idx+2] = h_l3_sgl2(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        hCoeffs_sgl1[3*idx+2] = h_lnm_3_sgl1(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
         
-        hCoeffs_sgl3[3*idx] = h_l1_sgl3(k,pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        hCoeffs_sgl2[3*idx] = h_lnm_1_sgl2(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
-        hCoeffs_sgl3[3*idx+1] = h_l2_sgl3(k,pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        hCoeffs_sgl2[3*idx+1] = h_lnm_2_sgl2(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
-        hCoeffs_sgl3[3*idx+2] = h_l3_sgl3(k,pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
-                pnts[elem.nodes[2]],n,m);
-        
-        gCoeffs_sgl1[3*idx] = g_l1_sgl1(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
-                pnts[elem.nodes[2]],n,m);
-        gCoeffs_sgl1[3*idx+1] = g_l2_sgl1(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
-                pnts[elem.nodes[2]],n,m);
-        gCoeffs_sgl1[3*idx+2] = g_l3_sgl1(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        hCoeffs_sgl2[3*idx+2] = h_lnm_3_sgl2(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
         
-        gCoeffs_sgl2[3*idx] = g_l1_sgl2(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        hCoeffs_sgl3[3*idx] = h_lnm_1_sgl3(k,pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
-        gCoeffs_sgl2[3*idx+1] = g_l2_sgl2(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        hCoeffs_sgl3[3*idx+1] = h_lnm_2_sgl3(k,pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
-        gCoeffs_sgl2[3*idx+2] = g_l3_sgl2(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        hCoeffs_sgl3[3*idx+2] = h_lnm_3_sgl3(k,pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
         
-        gCoeffs_sgl3[3*idx] = g_l1_sgl3(k,pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        gCoeffs_sgl1[3*idx] = g_lnm_1_sgl1(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
-        gCoeffs_sgl3[3*idx+1] = g_l2_sgl3(k,pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        gCoeffs_sgl1[3*idx+1] = g_lnm_2_sgl1(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
-        gCoeffs_sgl3[3*idx+2] = g_l3_sgl3(k,pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+        gCoeffs_sgl1[3*idx+2] = g_lnm_3_sgl1(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        
+        gCoeffs_sgl2[3*idx] = g_lnm_1_sgl2(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        gCoeffs_sgl2[3*idx+1] = g_lnm_2_sgl2(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        gCoeffs_sgl2[3*idx+2] = g_lnm_3_sgl2(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        
+        gCoeffs_sgl3[3*idx] = g_lnm_1_sgl3(k,pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        gCoeffs_sgl3[3*idx+1] = g_lnm_2_sgl3(k,pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
+                pnts[elem.nodes[2]],n,m);
+        gCoeffs_sgl3[3*idx+2] = g_lnm_3_sgl3(k,pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
                 pnts[elem.nodes[2]],n,m);
         
         cCoeffs_sgl1[idx] = c_l_sgl1(pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],
