@@ -825,9 +825,10 @@ __global__ void pntsElems_nm_sgl(const float k, const int n, const int m, const 
     }
 }
 
-__global__ void updateSystemLhs_nsgl(cuFloatComplex *A, const int numPnts, const int numCHIEF, 
+//Updated in an n and m loop
+__global__ void updateSystemLhs_hg_nsgl(cuFloatComplex *A, const int numPnts, const int numCHIEF, 
         const int lda, const cuFloatComplex *hCoeffs, const cuFloatComplex *gCoeffs, 
-        const float *cCoeffs, const triElem *elems, const int l) {
+        const triElem *elems, const int l) {
     int idx = blockIdx.x*blockDim.x+threadIdx.x;
     if(idx < numPnts+numCHIEF) {
         triElem elem = elems[l];
@@ -853,6 +854,126 @@ __global__ void updateSystemLhs_nsgl(cuFloatComplex *A, const int numPnts, const
         A[IDXC0(idx,elem.nodes[2],lda)] = cuCaddf(A[IDXC0(idx,elem.nodes[2],lda)],pContrs[2]);
     }
 }
+
+//numPnts does not include CHIEF points 
+//Updated in an n and m loop
+__global__ void updateSystemLhs_c_nsgl(cuFloatComplex *A, const int numPnts, const int lda, 
+        const float *cCoeffs) {
+    int idx = blockIdx.x*blockDim.x+threadIdx.x;
+    if(idx < numPnts) {
+        A[IDXC0(idx,idx,lda)] = cuCsubf(A[IDXC0(idx,idx,lda)],make_cuFloatComplex(cCoeffs[idx],0));
+    }
+}
+
+//Updated in an n and m loop
+__global__ void updateSystemRhs_nsgl(cuFloatComplex *B, const int numPnts, const int numCHIEF, 
+        const int ldb, const int srcIdx, const cuFloatComplex *gCoeffs, const triElem *elems, 
+        const int l) {
+    int idx = blockIdx.x*blockDim.x+threadIdx.x;
+    if(idx < numPnts+numCHIEF) {
+        cuFloatComplex gContrs[3], bc, temp;
+        gContrs[0] = gCoeffs[3*idx];
+        gContrs[1] = gCoeffs[3*idx+1];
+        gContrs[2] = gCoeffs[3*idx+2];
+        
+        triElem elem = elems[l];
+        bc = cuCdivf(elem.bc[2],elem.bc[1]);
+        
+        temp = cuCmulf(bc,gContrs[0]);
+        B[IDXC0(idx,srcIdx,ldb)] = cuCsubf(B[IDXC0(idx,srcIdx,ldb)],temp);
+        temp = cuCmulf(bc,gContrs[1]);
+        B[IDXC0(idx,srcIdx,ldb)] = cuCsubf(B[IDXC0(idx,srcIdx,ldb)],temp);
+        temp = cuCmulf(bc,gContrs[2]);
+        B[IDXC0(idx,srcIdx,ldb)] = cuCsubf(B[IDXC0(idx,srcIdx,ldb)],temp);
+    }
+}
+
+
+//Updated in an n and m loop
+__global__ void updateSystemLhs_hg_sgl(cuFloatComplex *A, const int numPnts, const int numCHIEF, 
+        const int lda, cuFloatComplex *hCoeffs_sgl1, cuFloatComplex *hCoeffs_sgl2, 
+        cuFloatComplex *hCoeffs_sgl3, cuFloatComplex *gCoeffs_sgl1, cuFloatComplex *gCoeffs_sgl2, 
+        cuFloatComplex *gCoeffs_sgl3, const triElem *elems, const int numElems) {
+    int idx = blockIdx.x*blockDim.x+threadIdx.x;
+    if(idx < numElems) {
+        triElem elem = elems[idx];
+        cuFloatComplex hContrs_sgl1[3], hContrs_sgl2[3], hContrs_sgl3[3], 
+                gContrs_sgl1[3], gContrs_sgl2[3], gContrs_sgl3[3], 
+                pContrs_sgl1[3], pContrs_sgl2[3], pContrs_sgl3[3];
+        cuFloatComplex temp, bc = cuCdivf(elem.bc[0],elem.bc[1]);
+        
+        //singular 1:
+        hContrs_sgl1[0] = hCoeffs_sgl1[3*idx];
+        hContrs_sgl1[1] = hCoeffs_sgl1[3*idx+1];
+        hContrs_sgl1[2] = hCoeffs_sgl1[3*idx+2];
+        
+        gContrs_sgl1[0] = gCoeffs_sgl1[3*idx];
+        gContrs_sgl1[1] = gCoeffs_sgl1[3*idx+1];
+        gContrs_sgl1[2] = gCoeffs_sgl1[3*idx+2];
+        
+        temp = cuCmulf(bc,gContrs_sgl1[0]);
+        pContrs_sgl1[0] = cuCsubf(hContrs_sgl1[0],temp);
+        temp = cuCmulf(bc,gContrs_sgl1[1]);
+        pContrs_sgl1[1] = cuCsubf(hContrs_sgl1[1],temp);
+        temp = cuCmulf(bc,gContrs_sgl1[2]);
+        pContrs_sgl1[2] = cuCsubf(hContrs_sgl1[2],temp);
+        
+        A[IDXC0(elem.nodes[0],elem.nodes[0],lda)] = cuCaddf(A[IDXC0(elem.nodes[0],elem.nodes[0],lda)],
+                pContrs_sgl1[0]);
+        A[IDXC0(elem.nodes[0],elem.nodes[1],lda)] = cuCaddf(A[IDXC0(elem.nodes[0],elem.nodes[1],lda)],
+                pContrs_sgl1[1]);
+        A[IDXC0(elem.nodes[0],elem.nodes[2],lda)] = cuCaddf(A[IDXC0(elem.nodes[0],elem.nodes[2],lda)],
+                pContrs_sgl1[2]);
+        
+        //singular 2:
+        hContrs_sgl2[0] = hCoeffs_sgl2[3*idx];
+        hContrs_sgl2[1] = hCoeffs_sgl2[3*idx+1];
+        hContrs_sgl2[2] = hCoeffs_sgl2[3*idx+2];
+        
+        gContrs_sgl2[0] = gCoeffs_sgl2[3*idx];
+        gContrs_sgl2[1] = gCoeffs_sgl2[3*idx+1];
+        gContrs_sgl2[2] = gCoeffs_sgl2[3*idx+2];
+        
+        temp = cuCmulf(bc,gContrs_sgl2[0]);
+        pContrs_sgl2[0] = cuCsubf(hContrs_sgl2[0],temp);
+        temp = cuCmulf(bc,gContrs_sgl2[1]);
+        pContrs_sgl2[1] = cuCsubf(hContrs_sgl2[1],temp);
+        temp = cuCmulf(bc,gContrs_sgl1[2]);
+        pContrs_sgl2[2] = cuCsubf(hContrs_sgl2[2],temp);
+        
+        A[IDXC0(elem.nodes[1],elem.nodes[0],lda)] = cuCaddf(A[IDXC0(elem.nodes[1],elem.nodes[0],lda)],
+                pContrs_sgl2[0]);
+        A[IDXC0(elem.nodes[1],elem.nodes[1],lda)] = cuCaddf(A[IDXC0(elem.nodes[1],elem.nodes[1],lda)],
+                pContrs_sgl2[1]);
+        A[IDXC0(elem.nodes[1],elem.nodes[2],lda)] = cuCaddf(A[IDXC0(elem.nodes[1],elem.nodes[2],lda)],
+                pContrs_sgl2[2]);
+        
+        //singular 2:
+        hContrs_sgl3[0] = hCoeffs_sgl3[3*idx];
+        hContrs_sgl3[1] = hCoeffs_sgl3[3*idx+1];
+        hContrs_sgl3[2] = hCoeffs_sgl3[3*idx+2];
+        
+        gContrs_sgl3[0] = gCoeffs_sgl3[3*idx];
+        gContrs_sgl3[1] = gCoeffs_sgl3[3*idx+1];
+        gContrs_sgl3[2] = gCoeffs_sgl3[3*idx+2];
+        
+        temp = cuCmulf(bc,gContrs_sgl3[0]);
+        pContrs_sgl3[0] = cuCsubf(hContrs_sgl3[0],temp);
+        temp = cuCmulf(bc,gContrs_sgl3[1]);
+        pContrs_sgl3[1] = cuCsubf(hContrs_sgl3[1],temp);
+        temp = cuCmulf(bc,gContrs_sgl3[2]);
+        pContrs_sgl3[2] = cuCsubf(hContrs_sgl3[2],temp);
+        
+        A[IDXC0(elem.nodes[2],elem.nodes[0],lda)] = cuCaddf(A[IDXC0(elem.nodes[2],elem.nodes[0],lda)],
+                pContrs_sgl3[0]);
+        A[IDXC0(elem.nodes[2],elem.nodes[1],lda)] = cuCaddf(A[IDXC0(elem.nodes[2],elem.nodes[1],lda)],
+                pContrs_sgl3[1]);
+        A[IDXC0(elem.nodes[2],elem.nodes[2],lda)] = cuCaddf(A[IDXC0(elem.nodes[2],elem.nodes[2],lda)],
+                pContrs_sgl3[2]);
+    }
+}
+
+
 
 __host__ __device__ float trnglArea(const cartCoord p1, const cartCoord p2) {
     cartCoord temp = p1*p2;
