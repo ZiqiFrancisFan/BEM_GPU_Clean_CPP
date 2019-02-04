@@ -174,8 +174,12 @@ ostream& operator<<(ostream&,const triElem&);
 //class mesh
 class mesh {
     friend ostream& operator<<(ostream&,const mesh&);
+    
     friend __global__ void rayTrnglsInt(const cartCoord,const cartCoord,
     const cartCoord*,const triElem*,const int,bool*);
+    
+    friend int bemSystem(const mesh &m, const float k, const cartCoord *srcs, const int numSrcs,
+        cuFloatComplex *A, const int lda, cuFloatComplex *B, const int ldb);
     friend int Test();
     
 private:
@@ -201,7 +205,7 @@ public:
     int genCHIEF(const int,const float);
     void printBB();
     int chiefToGPU(cartCoord**);
-    int meshToGPU(cartCoord**,triElem**);
+    int meshToGPU(cartCoord**,triElem**) const;
 };
 
 ostream& operator<<(ostream&,const mesh&);

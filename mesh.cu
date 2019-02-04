@@ -841,6 +841,24 @@ int genSystem(const float k, const triElem *elems, const int numElems,
     return EXIT_SUCCESS;
 }
 
+int bemSystem(const mesh &m, const float k, const cartCoord *srcs, const int numSrcs,
+        cuFloatComplex *A, const int lda, cuFloatComplex *B, const int ldb) {
+    int i;
+    cartCoord *pnts_d;
+    triElem *elems_d;
+    HOST_CALL(m.meshToGPU(&pnts_d,&elems_d));
+    cartCoord *pnts = new cartCoord[m.numPnts+m.numCHIEF];
+    for(i=0;i<m.numPnts;i++) {
+        pnts[i] = m.pnts[i];
+    }
+    for(i=0;i<m.numCHIEF;i++) {
+        pnts[m.numPnts+i] = m.chiefPnts[i];
+    }
+    HOST_CALL(genSystem(k,m.elems,m.numElems,pnts,m.numPnts,m.numCHIEF,srcs,numSrcs,A,lda,B,ldb));
+    delete[] pnts;
+    return EXIT_SUCCESS;
+}
+
 __host__ __device__ float trnglArea(const cartCoord p1, const cartCoord p2) {
     cartCoord temp = p1*p2;
     return temp.nrm2()/2.0;
@@ -996,32 +1014,25 @@ int mesh::readObj(const char *file) {
 
 mesh::mesh(const mesh &rhs) {
     if(rhs.numPnts > 0) {
-        if(pnts != NULL) {
-            delete[] pnts;
-        }
         numPnts = rhs.numPnts;
         pnts = new cartCoord[numPnts];
         for(int i=0;i<numPnts;i++) {
             pnts[i] = rhs.pnts[i];
         }
-    } else {
-        if(pnts != NULL) {
-            delete[] pnts;
+    }
+    if(rhs.numCHIEF > 0) {
+        numCHIEF = rhs.numCHIEF;
+        chiefPnts = new cartCoord[numCHIEF];
+        for(int i=0;i<numCHIEF;i++) {
+            chiefPnts[i] = rhs.chiefPnts[i];
         }
     }
     
     if(rhs.numElems > 0) {
-        if(elems != NULL) {
-            delete[] elems;
-        }
         numElems = rhs.numElems;
         elems = new triElem[numElems];
         for(int i=0;i<numPnts;i++) {
             elems[i] = rhs.elems[i];
-        }
-    } else {
-        if(elems != NULL) {
-            delete[] elems;
         }
     }
 }
@@ -1051,6 +1062,21 @@ mesh& mesh::operator=(const mesh &rhs) {
     } else {
         if(pnts != NULL) {
             delete[] pnts;
+        }
+    }
+    
+    if(rhs.numCHIEF > 0) {
+        if(chiefPnts != NULL) {
+            delete[] chiefPnts;
+        }
+        numCHIEF = rhs.numCHIEF;
+        chiefPnts = new cartCoord[numPnts];
+        for(int i=0;i<numCHIEF;i++) {
+            chiefPnts[i] = rhs.chiefPnts[i];
+        }
+    } else {
+        if(chiefPnts != NULL) {
+            delete[] chiefPnts;
         }
     }
     
@@ -1231,7 +1257,7 @@ int mesh::chiefToGPU(cartCoord **pchiefPnts) {
     return EXIT_SUCCESS;
 }
 
-int mesh::meshToGPU(cartCoord **pPnts_d, triElem **pElems_d) {
+int mesh::meshToGPU(cartCoord **pPnts_d, triElem **pElems_d) const {
     if(numPnts==0 || numElems==0 || numCHIEF==0) {
         cout << "The mesh object is incomplete." << endl;
         return EXIT_FAILURE;
