@@ -36,7 +36,7 @@ using namespace std;
 #endif
 
 #ifndef INTORDER
-#define INTORDER 7
+#define INTORDER 8
 #endif
 
 #ifndef IDXC0

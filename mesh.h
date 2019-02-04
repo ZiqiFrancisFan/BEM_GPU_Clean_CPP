@@ -204,8 +204,12 @@ public:
     int meshCloudToGPU(cartCoord**,triElem**);
     int genCHIEF(const int,const float);
     void printBB();
+    void printCHIEF();
     int chiefToGPU(cartCoord**);
     int meshToGPU(cartCoord**,triElem**) const;
+    int getNumChief() {return numCHIEF;}
+    int getNumPnts() {return numPnts;}
+    int getNumElems() {return numElems;}
 };
 
 ostream& operator<<(ostream&,const mesh&);

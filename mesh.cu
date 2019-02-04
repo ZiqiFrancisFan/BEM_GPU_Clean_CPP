@@ -94,8 +94,8 @@ __host__ __device__ float r(const cartCoord p1, const cartCoord p2) {
 }
 
 __host__ __device__ float prpn2(const cartCoord n, const cartCoord p1, const cartCoord p2) {
-    return ((p1.coords[0]-p2.coords[0])*n.coords[0]+(p1.coords[1]-p2.coords[1])*n.coords[1]
-            +(p1.coords[2]-p2.coords[2])*n.coords[2])/r(p1,p2);
+    return ((p2.coords[0]-p1.coords[0])*n.coords[0]+(p2.coords[1]-p1.coords[1])*n.coords[1]
+            +(p2.coords[2]-p1.coords[2])*n.coords[2])/r(p1,p2);
 }
 
 __host__ __device__ float prRpn2(const cartCoord n, const cartCoord p1, const cartCoord p2) {
@@ -121,7 +121,7 @@ __host__ __device__ float pPsiLpn2(const cartCoord n, const cartCoord p1,
 
 __host__ __device__ cuFloatComplex pGpn2(const float k, const cartCoord n, 
         const cartCoord p1, const cartCoord p2) {
-    cuFloatComplex temp1 = green2(k,p1,p2), temp2 = make_cuFloatComplex(-1.0/r(p1,p2),k);
+    cuFloatComplex temp1 = green2(k,p1,p2), temp2 = make_cuFloatComplex(-1.0/r(p1,p2),-k);
     cuFloatComplex temp3 = cuCmulf(temp1,temp2);
     float temp4 = prpn2(n,p1,p2);
     return make_cuFloatComplex(temp4*cuCrealf(temp3),temp4*cuCimagf(temp3));
@@ -741,6 +741,7 @@ int genSystem(const float k, const triElem *elems, const int numElems,
     numBlocks = (numNods+numCHIEF+width-1)/width;
     
     for(l=0;l<numElems;l++) {
+        //cout << "The current element: " << l << endl;
         elemLPnts_nsgl<<<numBlocks,width>>>(k,l,elems_d,pnts_d,numNods,numCHIEF,A_d,lda,B_d,numSrcs,ldb);
     }
     
@@ -1230,12 +1231,14 @@ int mesh::genCHIEF(const int num, const float threshold) {
     CUDA_CALL(cudaFree(flags_d));
     CUDA_CALL(cudaFree(dists_d));
     CURAND_CALL(curandDestroyGenerator(gen));
-    
+
+    return EXIT_SUCCESS;
+}
+
+void mesh::printCHIEF() {
     for(int i=0;i<numCHIEF;i++) {
         cout << chiefPnts[i] << endl;
     }
-     
-    return EXIT_SUCCESS;
 }
 
 int mesh::meshCloudToGPU(cartCoord **pPnts_d,triElem **pElems_d) {
@@ -1271,10 +1274,10 @@ int mesh::meshToGPU(cartCoord **pPnts_d, triElem **pElems_d) const {
             pnts_h[numPnts+i] = chiefPnts[i];
         }
         CUDA_CALL(cudaMalloc(pPnts_d,(numPnts+numCHIEF)*sizeof(cartCoord)));
-        CUDA_CALL(cudaMemcpy(pPnts_d,pnts_h,(numPnts+numCHIEF)*sizeof(cartCoord),cudaMemcpyHostToDevice));
+        CUDA_CALL(cudaMemcpy(*pPnts_d,pnts_h,(numPnts+numCHIEF)*sizeof(cartCoord),cudaMemcpyHostToDevice));
         
         CUDA_CALL(cudaMalloc(pElems_d,numElems*sizeof(triElem)));
-        CUDA_CALL(cudaMemcpy(pElems_d,elems,numElems*sizeof(triElem),cudaMemcpyHostToDevice));
+        CUDA_CALL(cudaMemcpy(*pElems_d,elems,numElems*sizeof(triElem),cudaMemcpyHostToDevice));
         return EXIT_SUCCESS;
     }
 }
