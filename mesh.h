@@ -140,10 +140,16 @@ class triElem {
         cuFloatComplex *B, const int numSrcs, const int ldb);
     
     friend __global__ void elemsPnts_sgl(const float k, const triElem *elems, const int numElems,
-        const cartCoord *pnts, const int numNods, const int numCHIEF, cuFloatComplex *hCoeffs_sgl1, 
+        const cartCoord *pnts, cuFloatComplex *hCoeffs_sgl1, 
         cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, cuFloatComplex *gCoeffs_sgl1, 
         cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, float *cCoeffs_sgl1, 
         float *cCoeffs_sgl2, float *cCoeffs_sgl3);
+    
+    friend __global__ void updateSystem_sgl(const triElem *elems, const int numElems, cuFloatComplex *hCoeffs_sgl1, 
+        cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, cuFloatComplex *gCoeffs_sgl1, 
+        cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, float *cCoeffs_sgl1, 
+        float *cCoeffs_sgl2, float *cCoeffs_sgl3, cuFloatComplex *A, const int lda, 
+        cuFloatComplex *B, const int numSrcs, const int ldb);
     
     friend class mesh;
 private:
@@ -271,7 +277,13 @@ __global__ void elemLPnts_nsgl(const float k, const int l, const triElem *elems,
         cuFloatComplex *B, const int numSrcs, const int ldb);
 
 __global__ void elemsPnts_sgl(const float k, const triElem *elems, const int numElems,
-        const cartCoord *pnts, const int numNods, const int numCHIEF, cuFloatComplex *hCoeffs_sgl1, 
+        const cartCoord *pnts, cuFloatComplex *hCoeffs_sgl1, 
+        cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, cuFloatComplex *gCoeffs_sgl1, 
+        cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, float *cCoeffs_sgl1, 
+        float *cCoeffs_sgl2, float *cCoeffs_sgl3, cuFloatComplex *A, const int lda, 
+        cuFloatComplex *B, const int numSrcs, const int ldb);
+
+__global__ void updateSystem_sgl(const triElem *elems, const int numElems, cuFloatComplex *hCoeffs_sgl1, 
         cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, cuFloatComplex *gCoeffs_sgl1, 
         cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, float *cCoeffs_sgl1, 
         float *cCoeffs_sgl2, float *cCoeffs_sgl3);

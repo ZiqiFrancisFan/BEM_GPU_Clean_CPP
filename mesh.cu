@@ -588,10 +588,9 @@ __global__ void elemLPnts_nsgl(const float k, const int l, const triElem *elems,
 }
 
 __global__ void elemsPnts_sgl(const float k, const triElem *elems, const int numElems,
-        const cartCoord *pnts, const int numNods, const int numCHIEF, cuFloatComplex *hCoeffs_sgl1, 
-        cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, cuFloatComplex *gCoeffs_sgl1, 
-        cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, float *cCoeffs_sgl1, 
-        float *cCoeffs_sgl2, float *cCoeffs_sgl3) {
+        const cartCoord *pnts, cuFloatComplex *hCoeffs_sgl1, cuFloatComplex *hCoeffs_sgl2, 
+        cuFloatComplex *hCoeffs_sgl3, cuFloatComplex *gCoeffs_sgl1, cuFloatComplex *gCoeffs_sgl2, 
+        cuFloatComplex *gCoeffs_sgl3, float *cCoeffs_sgl1, float *cCoeffs_sgl2, float *cCoeffs_sgl3) {
     int idx = blockIdx.x*blockDim.x+threadIdx.x;
     if(idx < numElems) {
         triElem elem = elems[idx];
@@ -599,7 +598,7 @@ __global__ void elemsPnts_sgl(const float k, const triElem *elems, const int num
                 hCoeffs_sgl1+3*idx,hCoeffs_sgl1+3*idx+1,hCoeffs_sgl1+3*idx+2);
         h_l_sgl2(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],pnts[elem.nodes[2]],
                 hCoeffs_sgl2+3*idx,hCoeffs_sgl2+3*idx+1,hCoeffs_sgl2+3*idx+2);
-        h_l_sgl3(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],pnts[elem.nodes[2]],
+        h_l_sgl3(k,pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],pnts[elem.nodes[2]],
                 hCoeffs_sgl3+3*idx,hCoeffs_sgl3+3*idx+1,hCoeffs_sgl3+3*idx+2);
         
         g_l_sgl1(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],pnts[elem.nodes[2]],
@@ -615,7 +614,48 @@ __global__ void elemsPnts_sgl(const float k, const triElem *elems, const int num
                 cCoeffs_sgl2+idx);
         c_l_sgl3(k,pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],pnts[elem.nodes[2]],
                 cCoeffs_sgl3+idx);
+    }
+}
+
+__global__ void updateSystem_sgl(const triElem *elems, const int numElems, cuFloatComplex *hCoeffs_sgl1, 
+        cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, cuFloatComplex *gCoeffs_sgl1, 
+        cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, float *cCoeffs_sgl1, 
+        float *cCoeffs_sgl2, float *cCoeffs_sgl3, cuFloatComplex *A, const int lda, 
+        cuFloatComplex *B, const int numSrcs, const int ldb) {
+    //Indices with the same row and column index has to be updated on the CPU!
+    int idx = blockIdx.x*blockDim.x+threadIdx.x;
+    if(idx < numElems) {
+        int i;
+        triElem elem = elems[idx];
+        cuFloatComplex pCoeffs[3];
+        cuFloatComplex bc = cuCdivf(elem.bc[0],elem.bc[1]);
         
+        //Deal with singularity 1
+        for(i=0;i<3;i++) {
+            pCoeffs[i] = cuCsubf(hCoeffs_sgl1[3*idx+i],cuCmulf(bc,gCoeffs_sgl1[3*idx+i]));
+        }
+        A[IDXC0(elem.nodes[0],elem.nodes[1],lda)] = cuCaddf(A[IDXC0(elem.nodes[0],elem.nodes[1],lda)],
+                pCoeffs[1]);
+        A[IDXC0(elem.nodes[0],elem.nodes[2],lda)] = cuCaddf(A[IDXC0(elem.nodes[0],elem.nodes[2],lda)],
+                pCoeffs[2]);
+        
+        //Deal with singularity 2
+        for(i=0;i<3;i++) {
+            pCoeffs[i] = cuCsubf(hCoeffs_sgl2[3*idx+i],cuCmulf(bc,gCoeffs_sgl2[3*idx+i]));
+        }
+        A[IDXC0(elem.nodes[1],elem.nodes[0],lda)] = cuCaddf(A[IDXC0(elem.nodes[1],elem.nodes[0],lda)],
+                pCoeffs[0]);
+        A[IDXC0(elem.nodes[1],elem.nodes[2],lda)] = cuCaddf(A[IDXC0(elem.nodes[1],elem.nodes[2],lda)],
+                pCoeffs[2]);
+        
+        //Deal with singularity 3
+        for(i=0;i<3;i++) {
+            pCoeffs[i] = cuCsubf(hCoeffs_sgl3[3*idx+i],cuCmulf(bc,gCoeffs_sgl3[3*idx+i]));
+        }
+        A[IDXC0(elem.nodes[2],elem.nodes[0],lda)] = cuCaddf(A[IDXC0(elem.nodes[2],elem.nodes[0],lda)],
+                pCoeffs[0]);
+        A[IDXC0(elem.nodes[2],elem.nodes[1],lda)] = cuCaddf(A[IDXC0(elem.nodes[2],elem.nodes[1],lda)],
+                pCoeffs[1]);
     }
 }
 
