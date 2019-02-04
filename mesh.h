@@ -147,9 +147,13 @@ class triElem {
     
     friend __global__ void updateSystem_sgl(const triElem *elems, const int numElems, cuFloatComplex *hCoeffs_sgl1, 
         cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, cuFloatComplex *gCoeffs_sgl1, 
-        cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, float *cCoeffs_sgl1, 
-        float *cCoeffs_sgl2, float *cCoeffs_sgl3, cuFloatComplex *A, const int lda, 
-        cuFloatComplex *B, const int numSrcs, const int ldb);
+        cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, cuFloatComplex *A, const int lda);
+    
+    friend void updateSystemCPU(const triElem *elems, const int numElems, cuFloatComplex *hCoeffs_sgl1, 
+        cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, 
+        cuFloatComplex *gCoeffs_sgl1, cuFloatComplex *gCoeffs_sgl2, 
+        cuFloatComplex *gCoeffs_sgl3, float *cCoeffs_sgl1, float *cCoeffs_sgl2, float *cCoeffs_sgl3,
+        cuFloatComplex *A, const int lda, cuFloatComplex *B, const int numSrcs, const int ldb);
     
     friend class mesh;
 private:
@@ -285,8 +289,14 @@ __global__ void elemsPnts_sgl(const float k, const triElem *elems, const int num
 
 __global__ void updateSystem_sgl(const triElem *elems, const int numElems, cuFloatComplex *hCoeffs_sgl1, 
         cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, cuFloatComplex *gCoeffs_sgl1, 
-        cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, float *cCoeffs_sgl1, 
-        float *cCoeffs_sgl2, float *cCoeffs_sgl3);
+        cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, cuFloatComplex *A, const int lda);
+
+void updateSystemCPU(const triElem *elems, const int numElems, cuFloatComplex *hCoeffs_sgl1, 
+        cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, 
+        cuFloatComplex *gCoeffs_sgl1, cuFloatComplex *gCoeffs_sgl2, 
+        cuFloatComplex *gCoeffs_sgl3, float *cCoeffs_sgl1, float *cCoeffs_sgl2, float *cCoeffs_sgl3,
+        cuFloatComplex *A, const int lda, cuFloatComplex *B, 
+        const int numSrcs, const int ldb);
 
 __device__ void h_l_nsgl(const float k, const cartCoord x, const cartCoord p1, 
         const cartCoord p2, const cartCoord p3, cuFloatComplex *pCoeff1, 

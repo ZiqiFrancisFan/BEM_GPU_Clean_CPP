@@ -619,9 +619,7 @@ __global__ void elemsPnts_sgl(const float k, const triElem *elems, const int num
 
 __global__ void updateSystem_sgl(const triElem *elems, const int numElems, cuFloatComplex *hCoeffs_sgl1, 
         cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, cuFloatComplex *gCoeffs_sgl1, 
-        cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, float *cCoeffs_sgl1, 
-        float *cCoeffs_sgl2, float *cCoeffs_sgl3, cuFloatComplex *A, const int lda, 
-        cuFloatComplex *B, const int numSrcs, const int ldb) {
+        cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, cuFloatComplex *A, const int lda) {
     //Indices with the same row and column index has to be updated on the CPU!
     int idx = blockIdx.x*blockDim.x+threadIdx.x;
     if(idx < numElems) {
@@ -657,6 +655,158 @@ __global__ void updateSystem_sgl(const triElem *elems, const int numElems, cuFlo
         A[IDXC0(elem.nodes[2],elem.nodes[1],lda)] = cuCaddf(A[IDXC0(elem.nodes[2],elem.nodes[1],lda)],
                 pCoeffs[1]);
     }
+}
+
+void updateSystemCPU(const triElem *elems, const int numElems, 
+        cuFloatComplex *hCoeffs_sgl1, cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, 
+        cuFloatComplex *gCoeffs_sgl1, cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, 
+        float *cCoeffs_sgl1, float *cCoeffs_sgl2, float *cCoeffs_sgl3,
+        cuFloatComplex *A, const int lda, cuFloatComplex *B, const int numSrcs, const int ldb) {
+    int i, j, k;
+    cuFloatComplex bc, pCoeff;
+    for(i=0;i<numElems;i++) {
+        bc = cuCdivf(elems[i].bc[0],elems[i].bc[1]);
+        pCoeff = cuCsubf(hCoeffs_sgl1[3*i],cuCmulf(bc,gCoeffs_sgl1[3*i]));
+        A[IDXC0(elems[i].nodes[0],elems[i].nodes[0],lda)] = cuCaddf(A[IDXC0(elems[i].nodes[0],elems[i].nodes[0],lda)],
+            pCoeff);
+        pCoeff = cuCsubf(hCoeffs_sgl2[3*i+1],cuCmulf(bc,gCoeffs_sgl2[3*i+1]));
+        A[IDXC0(elems[i].nodes[1],elems[i].nodes[1],lda)] = cuCaddf(A[IDXC0(elems[i].nodes[1],elems[i].nodes[1],lda)],
+            pCoeff);
+        pCoeff = cuCsubf(hCoeffs_sgl3[3*i+2],cuCmulf(bc,gCoeffs_sgl3[3*i+2]));
+        A[IDXC0(elems[i].nodes[2],elems[i].nodes[2],lda)] = cuCaddf(A[IDXC0(elems[i].nodes[2],elems[i].nodes[2],lda)],
+            pCoeff);
+        
+        A[IDXC0(elems[i].nodes[0],elems[i].nodes[0],lda)] = cuCsubf(A[IDXC0(elems[i].nodes[0],elems[i].nodes[0],lda)],
+                make_cuFloatComplex(cCoeffs_sgl1[i],0));
+        A[IDXC0(elems[i].nodes[1],elems[i].nodes[1],lda)] = cuCsubf(A[IDXC0(elems[i].nodes[1],elems[i].nodes[1],lda)],
+                make_cuFloatComplex(cCoeffs_sgl2[i],0));
+        A[IDXC0(elems[i].nodes[2],elems[i].nodes[2],lda)] = cuCsubf(A[IDXC0(elems[i].nodes[2],elems[i].nodes[2],lda)],
+                make_cuFloatComplex(cCoeffs_sgl3[i],0));
+        
+        
+        bc = cuCdivf(elems[i].bc[2],elems[i].bc[1]);
+        for(j=0;j<numSrcs;j++) {
+            for(k=0;k<3;k++) {
+                B[IDXC0(elems[i].nodes[0],j,ldb)] = cuCsubf(B[IDXC0(elems[i].nodes[0],j,ldb)],
+                    cuCmulf(bc,gCoeffs_sgl1[3*i+k]));
+                B[IDXC0(elems[i].nodes[1],j,ldb)] = cuCsubf(B[IDXC0(elems[i].nodes[1],j,ldb)],
+                    cuCmulf(bc,gCoeffs_sgl2[3*i+k]));
+                B[IDXC0(elems[i].nodes[2],j,ldb)] = cuCsubf(B[IDXC0(elems[i].nodes[2],j,ldb)],
+                    cuCmulf(bc,gCoeffs_sgl3[3*i+k]));
+            }
+        }
+    }
+}
+
+int genSystem(const float k, const triElem *elems, const int numElems, 
+        const cartCoord *pnts, const int numNods, const int numCHIEF, 
+        const cartCoord *srcs, const int numSrcs, cuFloatComplex *A, const int lda, 
+        cuFloatComplex *B, const int ldb) {
+    //Initialization of A
+    int i, j, l;
+    for(i=0;i<numNods+numCHIEF;i++) {
+        for(j=0;j<numNods;j++) {
+            if(i==j) {
+                A[IDXC0(i,j,lda)] = make_cuFloatComplex(1,0);
+            } else {
+                A[IDXC0(i,j,lda)] = make_cuFloatComplex(0,0);
+            }
+        }
+    }
+    
+    //Initialization of B
+    for(i=0;i<numNods+numCHIEF;i++) {
+        for(j=0;j<numSrcs;j++) {
+            B[IDXC0(i,j,ldb)] = green2(k,srcs[j],pnts[i]);
+        }
+    }
+    
+    triElem *elems_d;
+    CUDA_CALL(cudaMalloc(&elems_d,numElems*sizeof(triElem)));
+    CUDA_CALL(cudaMemcpy(elems_d,elems,numElems*sizeof(triElem),cudaMemcpyHostToDevice));
+    
+    cartCoord *pnts_d;
+    CUDA_CALL(cudaMalloc(&pnts_d,(numNods+numCHIEF)*sizeof(cartCoord)));
+    CUDA_CALL(cudaMemcpy(pnts_d,pnts,(numNods+numCHIEF)*sizeof(cartCoord),cudaMemcpyHostToDevice));
+    
+    cuFloatComplex *A_d, *B_d;
+    CUDA_CALL(cudaMalloc(&A_d,(numNods+numCHIEF)*numNods*sizeof(cuFloatComplex)));
+    CUDA_CALL(cudaMemcpy(A_d,A,(numNods+numCHIEF)*numNods*sizeof(cuFloatComplex),cudaMemcpyHostToDevice));
+    
+    CUDA_CALL(cudaMalloc(&B_d,(numNods+numCHIEF)*numSrcs*sizeof(cuFloatComplex)));
+    CUDA_CALL(cudaMemcpy(B_d,B,(numNods+numCHIEF)*numSrcs*sizeof(cuFloatComplex),cudaMemcpyHostToDevice));
+    
+    int numBlocks, width = 32;
+    numBlocks = (numNods+numCHIEF+width-1)/width;
+    
+    for(l=0;l<numElems;l++) {
+        elemLPnts_nsgl<<<numBlocks,width>>>(k,l,elems_d,pnts_d,numNods,numCHIEF,A_d,lda,B_d,numSrcs,ldb);
+    }
+    
+    //Update singular
+    cuFloatComplex *hCoeffs_sgl1, *hCoeffs_sgl2, *hCoeffs_sgl3, *gCoeffs_sgl1, 
+            *gCoeffs_sgl2, *gCoeffs_sgl3, *hCoeffs_sgl1_d, *hCoeffs_sgl2_d, 
+            *hCoeffs_sgl3_d, *gCoeffs_sgl1_d, *gCoeffs_sgl2_d, *gCoeffs_sgl3_d;
+    float *cCoeffs_sgl1, *cCoeffs_sgl2, *cCoeffs_sgl3, 
+            *cCoeffs_sgl1_d, *cCoeffs_sgl2_d, *cCoeffs_sgl3_d;
+    
+    hCoeffs_sgl1 = new cuFloatComplex[3*numElems];
+    hCoeffs_sgl2 = new cuFloatComplex[3*numElems];
+    hCoeffs_sgl3 = new cuFloatComplex[3*numElems];
+    gCoeffs_sgl1 = new cuFloatComplex[3*numElems];
+    gCoeffs_sgl2 = new cuFloatComplex[3*numElems];
+    gCoeffs_sgl3 = new cuFloatComplex[3*numElems];
+    
+    cCoeffs_sgl1 = new float[numElems];
+    cCoeffs_sgl2 = new float[numElems];
+    cCoeffs_sgl3 = new float[numElems];
+    
+    CUDA_CALL(cudaMalloc(&hCoeffs_sgl1_d,3*numElems*sizeof(cuFloatComplex)));
+    CUDA_CALL(cudaMalloc(&hCoeffs_sgl2_d,3*numElems*sizeof(cuFloatComplex)));
+    CUDA_CALL(cudaMalloc(&hCoeffs_sgl3_d,3*numElems*sizeof(cuFloatComplex)));
+    
+    CUDA_CALL(cudaMalloc(&gCoeffs_sgl1_d,3*numElems*sizeof(cuFloatComplex)));
+    CUDA_CALL(cudaMalloc(&gCoeffs_sgl2_d,3*numElems*sizeof(cuFloatComplex)));
+    CUDA_CALL(cudaMalloc(&gCoeffs_sgl3_d,3*numElems*sizeof(cuFloatComplex)));
+    
+    CUDA_CALL(cudaMalloc(&cCoeffs_sgl1_d,numElems*sizeof(float)));
+    CUDA_CALL(cudaMalloc(&cCoeffs_sgl2_d,numElems*sizeof(float)));
+    CUDA_CALL(cudaMalloc(&cCoeffs_sgl3_d,numElems*sizeof(float)));
+    
+    numBlocks = (numElems+width-1)/width;
+    elemsPnts_sgl<<<numBlocks,width>>>(k,elems_d,numElems,pnts_d,hCoeffs_sgl1_d,hCoeffs_sgl2_d,hCoeffs_sgl3_d,
+            gCoeffs_sgl1_d,gCoeffs_sgl2_d,gCoeffs_sgl3_d,cCoeffs_sgl1_d,cCoeffs_sgl2_d,
+            cCoeffs_sgl3_d);
+    
+    CUDA_CALL(cudaMemcpy(hCoeffs_sgl1,hCoeffs_sgl1_d,3*numElems*sizeof(cuFloatComplex),
+            cudaMemcpyDeviceToHost));
+    CUDA_CALL(cudaMemcpy(hCoeffs_sgl2,hCoeffs_sgl2_d,3*numElems*sizeof(cuFloatComplex),
+            cudaMemcpyDeviceToHost));
+    CUDA_CALL(cudaMemcpy(hCoeffs_sgl3,hCoeffs_sgl3_d,3*numElems*sizeof(cuFloatComplex),
+            cudaMemcpyDeviceToHost));
+    
+    CUDA_CALL(cudaMemcpy(gCoeffs_sgl1,gCoeffs_sgl1_d,3*numElems*sizeof(cuFloatComplex),
+            cudaMemcpyDeviceToHost));
+    CUDA_CALL(cudaMemcpy(gCoeffs_sgl2,gCoeffs_sgl2_d,3*numElems*sizeof(cuFloatComplex),
+            cudaMemcpyDeviceToHost));
+    CUDA_CALL(cudaMemcpy(gCoeffs_sgl3,gCoeffs_sgl3_d,3*numElems*sizeof(cuFloatComplex),
+            cudaMemcpyDeviceToHost));
+    
+    CUDA_CALL(cudaMemcpy(cCoeffs_sgl1,cCoeffs_sgl1_d,numElems*sizeof(float),
+            cudaMemcpyDeviceToHost));
+    CUDA_CALL(cudaMemcpy(cCoeffs_sgl2,cCoeffs_sgl2_d,numElems*sizeof(float),
+            cudaMemcpyDeviceToHost));
+    CUDA_CALL(cudaMemcpy(cCoeffs_sgl3,cCoeffs_sgl3_d,numElems*sizeof(float),
+            cudaMemcpyDeviceToHost));
+    
+    updateSystem_sgl<<<numBlocks,width>>>(elems_d,numElems,hCoeffs_sgl1_d,hCoeffs_sgl2_d,hCoeffs_sgl3_d,
+            gCoeffs_sgl1_d,gCoeffs_sgl2_d,gCoeffs_sgl3_d,A_d,lda);
+    
+    updateSystemCPU(elems,numElems,hCoeffs_sgl1,hCoeffs_sgl2,hCoeffs_sgl3,
+            gCoeffs_sgl1,gCoeffs_sgl2,gCoeffs_sgl3,cCoeffs_sgl1,cCoeffs_sgl2,cCoeffs_sgl3,
+            A,lda,B,numSrcs,ldb);
+    
+    return EXIT_SUCCESS;
 }
 
 __host__ __device__ float trnglArea(const cartCoord p1, const cartCoord p2) {
