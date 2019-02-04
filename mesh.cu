@@ -617,10 +617,11 @@ __global__ void elemsPnts_sgl(const float k, const triElem *elems, const int num
     }
 }
 
-__global__ void updateSystem_sgl(const triElem *elems, const int numElems, cuFloatComplex *hCoeffs_sgl1, 
-        cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, cuFloatComplex *gCoeffs_sgl1, 
-        cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, cuFloatComplex *A, const int lda) {
-    //Indices with the same row and column index has to be updated on the CPU!
+__global__ void updateSystem_sgl(const triElem *elems, const int numElems, 
+        cuFloatComplex *hCoeffs_sgl1, cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, 
+        cuFloatComplex *gCoeffs_sgl1, cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, 
+        cuFloatComplex *A, const int lda) {
+    //Indices with the same row and column index must be updated on the CPU!
     int idx = blockIdx.x*blockDim.x+threadIdx.x;
     if(idx < numElems) {
         int i;
@@ -802,9 +803,40 @@ int genSystem(const float k, const triElem *elems, const int numElems,
     updateSystem_sgl<<<numBlocks,width>>>(elems_d,numElems,hCoeffs_sgl1_d,hCoeffs_sgl2_d,hCoeffs_sgl3_d,
             gCoeffs_sgl1_d,gCoeffs_sgl2_d,gCoeffs_sgl3_d,A_d,lda);
     
+    CUDA_CALL(cudaMemcpy(A,A_d,(numNods+numCHIEF)*numNods*sizeof(cuFloatComplex),cudaMemcpyDeviceToHost));
+    CUDA_CALL(cudaMemcpy(B,B_d,(numNods+numCHIEF)*numSrcs*sizeof(cuFloatComplex),cudaMemcpyDeviceToHost));
+    
     updateSystemCPU(elems,numElems,hCoeffs_sgl1,hCoeffs_sgl2,hCoeffs_sgl3,
             gCoeffs_sgl1,gCoeffs_sgl2,gCoeffs_sgl3,cCoeffs_sgl1,cCoeffs_sgl2,cCoeffs_sgl3,
             A,lda,B,numSrcs,ldb);
+    
+    
+    CUDA_CALL(cudaFree(A_d));
+    CUDA_CALL(cudaFree(B_d));
+    CUDA_CALL(cudaFree(hCoeffs_sgl1_d));
+    CUDA_CALL(cudaFree(hCoeffs_sgl2_d));
+    CUDA_CALL(cudaFree(hCoeffs_sgl3_d));
+    CUDA_CALL(cudaFree(gCoeffs_sgl1_d));
+    CUDA_CALL(cudaFree(gCoeffs_sgl2_d));
+    CUDA_CALL(cudaFree(gCoeffs_sgl3_d));
+    CUDA_CALL(cudaFree(cCoeffs_sgl1_d));
+    CUDA_CALL(cudaFree(cCoeffs_sgl2_d));
+    CUDA_CALL(cudaFree(cCoeffs_sgl3_d));
+    CUDA_CALL(cudaFree(elems_d));
+    CUDA_CALL(cudaFree(pnts_d));
+    
+    delete[] hCoeffs_sgl1;
+    delete[] hCoeffs_sgl2;
+    delete[] hCoeffs_sgl3;
+    
+    delete[] gCoeffs_sgl1;
+    delete[] gCoeffs_sgl2;
+    delete[] gCoeffs_sgl3;
+    
+    delete[] cCoeffs_sgl1;
+    delete[] cCoeffs_sgl2;
+    delete[] cCoeffs_sgl3;
+    
     
     return EXIT_SUCCESS;
 }
