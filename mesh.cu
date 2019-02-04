@@ -128,11 +128,11 @@ __host__ __device__ cuFloatComplex pGpn2(const float k, const cartCoord n,
 }
 
 __device__ void g_l_nsgl(const float k, const cartCoord x, const cartCoord p1, 
-        const cartCoord p2, const cartCoord p3, cuFloatComplex *pCoeff1, 
-        cuFloatComplex *pCoeff2, cuFloatComplex *pCoeff3) {
-    *pCoeff1 = make_cuFloatComplex(0,0);
-    *pCoeff2 = make_cuFloatComplex(0,0);
-    *pCoeff3 = make_cuFloatComplex(0,0);
+        const cartCoord p2, const cartCoord p3, cuFloatComplex *gCoeff1, 
+        cuFloatComplex *gCoeff2, cuFloatComplex *gCoeff3) {
+    *gCoeff1 = make_cuFloatComplex(0,0);
+    *gCoeff2 = make_cuFloatComplex(0,0);
+    *gCoeff3 = make_cuFloatComplex(0,0);
     float eta1, eta2, xi1, xi2, rho, theta, vertCrossProd, N1, N2, N3, temp[4], 
             omega = k*speed;
     cartCoord y, crossProd;
@@ -157,22 +157,22 @@ __device__ void g_l_nsgl(const float k, const cartCoord x, const cartCoord p1,
             temp[1] = temp[0]*N1;
             temp[2] = temp[0]*N2;
             temp[3] = temp[0]*N3;
-            *pCoeff1 = cuCaddf(*pCoeff1,make_cuFloatComplex(-temp[1]*cuCimagf(g),
+            *gCoeff1 = cuCaddf(*gCoeff1,make_cuFloatComplex(-temp[1]*cuCimagf(g),
                     temp[1]*cuCrealf(g)));
-            *pCoeff2 = cuCaddf(*pCoeff2,make_cuFloatComplex(-temp[2]*cuCimagf(g),
+            *gCoeff2 = cuCaddf(*gCoeff2,make_cuFloatComplex(-temp[2]*cuCimagf(g),
                     temp[2]*cuCrealf(g)));
-            *pCoeff3 = cuCaddf(*pCoeff3,make_cuFloatComplex(-temp[3]*cuCimagf(g),
+            *gCoeff3 = cuCaddf(*gCoeff3,make_cuFloatComplex(-temp[3]*cuCimagf(g),
                     temp[3]*cuCrealf(g)));
         }
     }
 }
 
 __device__ void h_l_nsgl(const float k, const cartCoord x, const cartCoord p1, 
-        const cartCoord p2, const cartCoord p3, cuFloatComplex *pCoeff1, 
-        cuFloatComplex *pCoeff2, cuFloatComplex *pCoeff3) {
-    *pCoeff1 = make_cuFloatComplex(0,0);
-    *pCoeff2 = make_cuFloatComplex(0,0);
-    *pCoeff3 = make_cuFloatComplex(0,0);
+        const cartCoord p2, const cartCoord p3, cuFloatComplex *hCoeff1, 
+        cuFloatComplex *hCoeff2, cuFloatComplex *hCoeff3) {
+    *hCoeff1 = make_cuFloatComplex(0,0);
+    *hCoeff2 = make_cuFloatComplex(0,0);
+    *hCoeff3 = make_cuFloatComplex(0,0);
     float eta1, eta2, xi1, xi2, rho, theta, vertCrossProd, N1, N2, N3, temp[4];
     cartCoord y, crossProd, normal;
     cuFloatComplex g;
@@ -197,22 +197,22 @@ __device__ void h_l_nsgl(const float k, const cartCoord x, const cartCoord p1,
             temp[1] = temp[0]*N1;
             temp[2] = temp[0]*N2;
             temp[3] = temp[0]*N3;
-            *pCoeff1 = cuCaddf(*pCoeff1,make_cuFloatComplex(temp[1]*cuCrealf(g),
+            *hCoeff1 = cuCaddf(*hCoeff1,make_cuFloatComplex(temp[1]*cuCrealf(g),
                     temp[1]*cuCimagf(g)));
-            *pCoeff2 = cuCaddf(*pCoeff2,make_cuFloatComplex(temp[2]*cuCrealf(g),
+            *hCoeff2 = cuCaddf(*hCoeff2,make_cuFloatComplex(temp[2]*cuCrealf(g),
                     temp[2]*cuCimagf(g)));
-            *pCoeff3 = cuCaddf(*pCoeff3,make_cuFloatComplex(temp[3]*cuCrealf(g),
+            *hCoeff3 = cuCaddf(*hCoeff3,make_cuFloatComplex(temp[3]*cuCrealf(g),
                     temp[3]*cuCimagf(g)));
         }
     }
 }
 
 __device__ void g_l_sgl1(const float k, const cartCoord x, const cartCoord p1, 
-        const cartCoord p2, const cartCoord p3, cuFloatComplex *pCoeff1, 
-        cuFloatComplex *pCoeff2, cuFloatComplex *pCoeff3) {
-    *pCoeff1 = make_cuFloatComplex(0,0);
-    *pCoeff2 = make_cuFloatComplex(0,0);
-    *pCoeff3 = make_cuFloatComplex(0,0);
+        const cartCoord p2, const cartCoord p3, cuFloatComplex *gCoeff1, 
+        cuFloatComplex *gCoeff2, cuFloatComplex *gCoeff3) {
+    *gCoeff1 = make_cuFloatComplex(0,0);
+    *gCoeff2 = make_cuFloatComplex(0,0);
+    *gCoeff3 = make_cuFloatComplex(0,0);
     float eta1, eta2, xi1, xi2, rho, theta, vertCrossProd, N1, N2, N3, temp[4], 
             omega = k*speed;
     cartCoord y, crossProd;
@@ -237,22 +237,22 @@ __device__ void g_l_sgl1(const float k, const cartCoord x, const cartCoord p1,
             temp[1] = temp[0]*N1;
             temp[2] = temp[0]*N2;
             temp[3] = temp[0]*N3;
-            *pCoeff1 = cuCaddf(*pCoeff1,make_cuFloatComplex(-temp[1]*cuCimagf(g),
+            *gCoeff1 = cuCaddf(*gCoeff1,make_cuFloatComplex(-temp[1]*cuCimagf(g),
                     temp[1]*cuCrealf(g)));
-            *pCoeff2 = cuCaddf(*pCoeff2,make_cuFloatComplex(-temp[2]*cuCimagf(g),
+            *gCoeff2 = cuCaddf(*gCoeff2,make_cuFloatComplex(-temp[2]*cuCimagf(g),
                     temp[2]*cuCrealf(g)));
-            *pCoeff3 = cuCaddf(*pCoeff3,make_cuFloatComplex(-temp[3]*cuCimagf(g),
+            *gCoeff3 = cuCaddf(*gCoeff3,make_cuFloatComplex(-temp[3]*cuCimagf(g),
                     temp[3]*cuCrealf(g)));
         }
     }
 }
 
 __device__ void g_l_sgl2(const float k, const cartCoord x, const cartCoord p1, 
-        const cartCoord p2, const cartCoord p3, cuFloatComplex *pCoeff1, 
-        cuFloatComplex *pCoeff2, cuFloatComplex *pCoeff3) {
-    *pCoeff1 = make_cuFloatComplex(0,0);
-    *pCoeff2 = make_cuFloatComplex(0,0);
-    *pCoeff3 = make_cuFloatComplex(0,0);
+        const cartCoord p2, const cartCoord p3, cuFloatComplex *gCoeff1, 
+        cuFloatComplex *gCoeff2, cuFloatComplex *gCoeff3) {
+    *gCoeff1 = make_cuFloatComplex(0,0);
+    *gCoeff2 = make_cuFloatComplex(0,0);
+    *gCoeff3 = make_cuFloatComplex(0,0);
     float eta1, eta2, xi1, xi2, rho, theta, vertCrossProd, N1, N2, N3, temp[4], 
             omega = k*speed;
     cartCoord y, crossProd;
@@ -277,22 +277,22 @@ __device__ void g_l_sgl2(const float k, const cartCoord x, const cartCoord p1,
             temp[1] = temp[0]*N1;
             temp[2] = temp[0]*N2;
             temp[3] = temp[0]*N3;
-            *pCoeff1 = cuCaddf(*pCoeff1,make_cuFloatComplex(-temp[1]*cuCimagf(g),
+            *gCoeff1 = cuCaddf(*gCoeff1,make_cuFloatComplex(-temp[1]*cuCimagf(g),
                     temp[1]*cuCrealf(g)));
-            *pCoeff2 = cuCaddf(*pCoeff2,make_cuFloatComplex(-temp[2]*cuCimagf(g),
+            *gCoeff2 = cuCaddf(*gCoeff2,make_cuFloatComplex(-temp[2]*cuCimagf(g),
                     temp[2]*cuCrealf(g)));
-            *pCoeff3 = cuCaddf(*pCoeff3,make_cuFloatComplex(-temp[3]*cuCimagf(g),
+            *gCoeff3 = cuCaddf(*gCoeff3,make_cuFloatComplex(-temp[3]*cuCimagf(g),
                     temp[3]*cuCrealf(g)));
         }
     }
 }
 
 __device__ void g_l_sgl3(const float k, const cartCoord x, const cartCoord p1, 
-        const cartCoord p2, const cartCoord p3, cuFloatComplex *pCoeff1, 
-        cuFloatComplex *pCoeff2, cuFloatComplex *pCoeff3) {
-    *pCoeff1 = make_cuFloatComplex(0,0);
-    *pCoeff2 = make_cuFloatComplex(0,0);
-    *pCoeff3 = make_cuFloatComplex(0,0);
+        const cartCoord p2, const cartCoord p3, cuFloatComplex *gCoeff1, 
+        cuFloatComplex *gCoeff2, cuFloatComplex *gCoeff3) {
+    *gCoeff1 = make_cuFloatComplex(0,0);
+    *gCoeff2 = make_cuFloatComplex(0,0);
+    *gCoeff3 = make_cuFloatComplex(0,0);
     float eta1, eta2, xi1, xi2, rho, theta, vertCrossProd, N1, N2, N3, temp[4], 
             omega = k*speed;
     cartCoord y, crossProd;
@@ -317,22 +317,22 @@ __device__ void g_l_sgl3(const float k, const cartCoord x, const cartCoord p1,
             temp[1] = temp[0]*N1;
             temp[2] = temp[0]*N2;
             temp[3] = temp[0]*N3;
-            *pCoeff1 = cuCaddf(*pCoeff1,make_cuFloatComplex(-temp[1]*cuCimagf(g),
+            *gCoeff1 = cuCaddf(*gCoeff1,make_cuFloatComplex(-temp[1]*cuCimagf(g),
                     temp[1]*cuCrealf(g)));
-            *pCoeff2 = cuCaddf(*pCoeff2,make_cuFloatComplex(-temp[2]*cuCimagf(g),
+            *gCoeff2 = cuCaddf(*gCoeff2,make_cuFloatComplex(-temp[2]*cuCimagf(g),
                     temp[2]*cuCrealf(g)));
-            *pCoeff3 = cuCaddf(*pCoeff3,make_cuFloatComplex(-temp[3]*cuCimagf(g),
+            *gCoeff3 = cuCaddf(*gCoeff3,make_cuFloatComplex(-temp[3]*cuCimagf(g),
                     temp[3]*cuCrealf(g)));
         }
     }
 }
 
 __device__ void h_l_sgl1(const float k, const cartCoord x, const cartCoord p1, 
-        const cartCoord p2, const cartCoord p3, cuFloatComplex *pCoeff1, 
-        cuFloatComplex *pCoeff2, cuFloatComplex *pCoeff3) {
-    *pCoeff1 = make_cuFloatComplex(0,0);
-    *pCoeff2 = make_cuFloatComplex(0,0);
-    *pCoeff3 = make_cuFloatComplex(0,0);
+        const cartCoord p2, const cartCoord p3, cuFloatComplex *hCoeff1, 
+        cuFloatComplex *hCoeff2, cuFloatComplex *hCoeff3) {
+    *hCoeff1 = make_cuFloatComplex(0,0);
+    *hCoeff2 = make_cuFloatComplex(0,0);
+    *hCoeff3 = make_cuFloatComplex(0,0);
     float eta1, eta2, xi1, xi2, rho, theta, vertCrossProd, N1, N2, N3, temp[4];
     cartCoord y, crossProd, normal;
     cuFloatComplex g;
@@ -357,22 +357,22 @@ __device__ void h_l_sgl1(const float k, const cartCoord x, const cartCoord p1,
             temp[1] = temp[0]*N1;
             temp[2] = temp[0]*N2;
             temp[3] = temp[0]*N3;
-            *pCoeff1 = cuCaddf(*pCoeff1,make_cuFloatComplex(temp[1]*cuCrealf(g),
+            *hCoeff1 = cuCaddf(*hCoeff1,make_cuFloatComplex(temp[1]*cuCrealf(g),
                     temp[1]*cuCimagf(g)));
-            *pCoeff2 = cuCaddf(*pCoeff2,make_cuFloatComplex(temp[2]*cuCrealf(g),
+            *hCoeff2 = cuCaddf(*hCoeff2,make_cuFloatComplex(temp[2]*cuCrealf(g),
                     temp[2]*cuCimagf(g)));
-            *pCoeff3 = cuCaddf(*pCoeff3,make_cuFloatComplex(temp[3]*cuCrealf(g),
+            *hCoeff3 = cuCaddf(*hCoeff3,make_cuFloatComplex(temp[3]*cuCrealf(g),
                     temp[3]*cuCimagf(g)));
         }
     }
 }
 
 __device__ void h_l_sgl2(const float k, const cartCoord x, const cartCoord p1, 
-        const cartCoord p2, const cartCoord p3, cuFloatComplex *pCoeff1, 
-        cuFloatComplex *pCoeff2, cuFloatComplex *pCoeff3) {
-    *pCoeff1 = make_cuFloatComplex(0,0);
-    *pCoeff2 = make_cuFloatComplex(0,0);
-    *pCoeff3 = make_cuFloatComplex(0,0);
+        const cartCoord p2, const cartCoord p3, cuFloatComplex *hCoeff1, 
+        cuFloatComplex *hCoeff2, cuFloatComplex *hCoeff3) {
+    *hCoeff1 = make_cuFloatComplex(0,0);
+    *hCoeff2 = make_cuFloatComplex(0,0);
+    *hCoeff3 = make_cuFloatComplex(0,0);
     float eta1, eta2, xi1, xi2, rho, theta, vertCrossProd, N1, N2, N3, temp[4];
     cartCoord y, crossProd, normal;
     cuFloatComplex g;
@@ -397,22 +397,22 @@ __device__ void h_l_sgl2(const float k, const cartCoord x, const cartCoord p1,
             temp[1] = temp[0]*N1;
             temp[2] = temp[0]*N2;
             temp[3] = temp[0]*N3;
-            *pCoeff1 = cuCaddf(*pCoeff1,make_cuFloatComplex(temp[1]*cuCrealf(g),
+            *hCoeff1 = cuCaddf(*hCoeff1,make_cuFloatComplex(temp[1]*cuCrealf(g),
                     temp[1]*cuCimagf(g)));
-            *pCoeff2 = cuCaddf(*pCoeff2,make_cuFloatComplex(temp[2]*cuCrealf(g),
+            *hCoeff2 = cuCaddf(*hCoeff2,make_cuFloatComplex(temp[2]*cuCrealf(g),
                     temp[2]*cuCimagf(g)));
-            *pCoeff3 = cuCaddf(*pCoeff3,make_cuFloatComplex(temp[3]*cuCrealf(g),
+            *hCoeff3 = cuCaddf(*hCoeff3,make_cuFloatComplex(temp[3]*cuCrealf(g),
                     temp[3]*cuCimagf(g)));
         }
     }
 }
 
 __device__ void h_l_sgl3(const float k, const cartCoord x, const cartCoord p1, 
-        const cartCoord p2, const cartCoord p3, cuFloatComplex *pCoeff1, 
-        cuFloatComplex *pCoeff2, cuFloatComplex *pCoeff3) {
-    *pCoeff1 = make_cuFloatComplex(0,0);
-    *pCoeff2 = make_cuFloatComplex(0,0);
-    *pCoeff3 = make_cuFloatComplex(0,0);
+        const cartCoord p2, const cartCoord p3, cuFloatComplex *hCoeff1, 
+        cuFloatComplex *hCoeff2, cuFloatComplex *hCoeff3) {
+    *hCoeff1 = make_cuFloatComplex(0,0);
+    *hCoeff2 = make_cuFloatComplex(0,0);
+    *hCoeff3 = make_cuFloatComplex(0,0);
     float eta1, eta2, xi1, xi2, rho, theta, vertCrossProd, N1, N2, N3, temp[4];
     cartCoord y, crossProd, normal;
     cuFloatComplex g;
@@ -437,11 +437,11 @@ __device__ void h_l_sgl3(const float k, const cartCoord x, const cartCoord p1,
             temp[1] = temp[0]*N1;
             temp[2] = temp[0]*N2;
             temp[3] = temp[0]*N3;
-            *pCoeff1 = cuCaddf(*pCoeff1,make_cuFloatComplex(temp[1]*cuCrealf(g),
+            *hCoeff1 = cuCaddf(*hCoeff1,make_cuFloatComplex(temp[1]*cuCrealf(g),
                     temp[1]*cuCimagf(g)));
-            *pCoeff2 = cuCaddf(*pCoeff2,make_cuFloatComplex(temp[2]*cuCrealf(g),
+            *hCoeff2 = cuCaddf(*hCoeff2,make_cuFloatComplex(temp[2]*cuCrealf(g),
                     temp[2]*cuCimagf(g)));
-            *pCoeff3 = cuCaddf(*pCoeff3,make_cuFloatComplex(temp[3]*cuCrealf(g),
+            *hCoeff3 = cuCaddf(*hCoeff3,make_cuFloatComplex(temp[3]*cuCrealf(g),
                     temp[3]*cuCimagf(g)));
         }
     }
@@ -584,6 +584,38 @@ __global__ void elemLPnts_nsgl(const float k, const int l, const triElem *elems,
                 B[IDXC0(idx,i,ldb)] = cuCsubf(B[IDXC0(idx,i,ldb)],cuCmulf(bc,gCoeffs[i]));
             }
         }       
+    }
+}
+
+__global__ void elemsPnts_sgl(const float k, const triElem *elems, const int numElems,
+        const cartCoord *pnts, const int numNods, const int numCHIEF, cuFloatComplex *hCoeffs_sgl1, 
+        cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, cuFloatComplex *gCoeffs_sgl1, 
+        cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, float *cCoeffs_sgl1, 
+        float *cCoeffs_sgl2, float *cCoeffs_sgl3) {
+    int idx = blockIdx.x*blockDim.x+threadIdx.x;
+    if(idx < numElems) {
+        triElem elem = elems[idx];
+        h_l_sgl1(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],pnts[elem.nodes[2]],
+                hCoeffs_sgl1+3*idx,hCoeffs_sgl1+3*idx+1,hCoeffs_sgl1+3*idx+2);
+        h_l_sgl2(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],pnts[elem.nodes[2]],
+                hCoeffs_sgl2+3*idx,hCoeffs_sgl2+3*idx+1,hCoeffs_sgl2+3*idx+2);
+        h_l_sgl3(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],pnts[elem.nodes[2]],
+                hCoeffs_sgl3+3*idx,hCoeffs_sgl3+3*idx+1,hCoeffs_sgl3+3*idx+2);
+        
+        g_l_sgl1(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],pnts[elem.nodes[2]],
+                gCoeffs_sgl1+3*idx,gCoeffs_sgl1+3*idx+1,gCoeffs_sgl1+3*idx+2);
+        g_l_sgl2(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],pnts[elem.nodes[2]],
+                gCoeffs_sgl2+3*idx,gCoeffs_sgl2+3*idx+1,gCoeffs_sgl2+3*idx+2);
+        g_l_sgl3(k,pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],pnts[elem.nodes[2]],
+                gCoeffs_sgl3+3*idx,gCoeffs_sgl3+3*idx+1,gCoeffs_sgl3+3*idx+2);
+        
+        c_l_sgl1(k,pnts[elem.nodes[0]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],pnts[elem.nodes[2]],
+                cCoeffs_sgl1+idx);
+        c_l_sgl2(k,pnts[elem.nodes[1]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],pnts[elem.nodes[2]],
+                cCoeffs_sgl2+idx);
+        c_l_sgl3(k,pnts[elem.nodes[2]],pnts[elem.nodes[0]],pnts[elem.nodes[1]],pnts[elem.nodes[2]],
+                cCoeffs_sgl3+idx);
+        
     }
 }
 

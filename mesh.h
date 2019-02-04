@@ -139,6 +139,12 @@ class triElem {
         const int numNods, const int numCHIEF, cuFloatComplex *A, const int lda, 
         cuFloatComplex *B, const int numSrcs, const int ldb);
     
+    friend __global__ void elemsPnts_sgl(const float k, const triElem *elems, const int numElems,
+        const cartCoord *pnts, const int numNods, const int numCHIEF, cuFloatComplex *hCoeffs_sgl1, 
+        cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, cuFloatComplex *gCoeffs_sgl1, 
+        cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, float *cCoeffs_sgl1, 
+        float *cCoeffs_sgl2, float *cCoeffs_sgl3);
+    
     friend class mesh;
 private:
     int nodes[3];
@@ -263,6 +269,12 @@ __host__ __device__ cartCoord2D rhoThetaToXi_2(const cartCoord2D);
 __global__ void elemLPnts_nsgl(const float k, const int l, const triElem *elems, const cartCoord *pnts, 
         const int numNods, const int numCHIEF, cuFloatComplex *A, const int lda, 
         cuFloatComplex *B, const int numSrcs, const int ldb);
+
+__global__ void elemsPnts_sgl(const float k, const triElem *elems, const int numElems,
+        const cartCoord *pnts, const int numNods, const int numCHIEF, cuFloatComplex *hCoeffs_sgl1, 
+        cuFloatComplex *hCoeffs_sgl2, cuFloatComplex *hCoeffs_sgl3, cuFloatComplex *gCoeffs_sgl1, 
+        cuFloatComplex *gCoeffs_sgl2, cuFloatComplex *gCoeffs_sgl3, float *cCoeffs_sgl1, 
+        float *cCoeffs_sgl2, float *cCoeffs_sgl3);
 
 __device__ void h_l_nsgl(const float k, const cartCoord x, const cartCoord p1, 
         const cartCoord p2, const cartCoord p3, cuFloatComplex *pCoeff1, 
