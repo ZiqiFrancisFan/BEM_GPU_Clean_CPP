@@ -37,7 +37,7 @@
 #endif
 
 #ifndef INTORDER
-#define INTORDER 7
+#define INTORDER 6
 #endif
 
 #ifndef IDXC0

@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
     size_t fr, ttl;
     m.readObj("sphere1.obj");
     m.findBB(0.0001);
-    m.genCHIEF(100,0.1);
+    m.genCHIEF(200,0.1);
     std::cout << "CHIEF points generated." << std::endl;
     m.printCHIEF();
     gaussQuad gss(INTORDER);
@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
     HOST_CALL(lsqSolver(A,m.getNumPnts()+m.getNumChief(),m.getNumPnts(),
             m.getNumPnts()+m.getNumChief(),B,numSrcs,m.getNumPnts()+m.getNumChief(),Q));
     t = clock()-t;
-    //printComplexMatrix(B,m.getNumPnts(),numSrcs,m.getNumPnts()+m.getNumChief());
+    printComplexMatrix(B,m.getNumPnts(),numSrcs,m.getNumPnts()+m.getNumChief());
     printf("Elapsed %f seconds in generation of system.\n",((float)t)/CLOCKS_PER_SEC);
     
     delete[] A;

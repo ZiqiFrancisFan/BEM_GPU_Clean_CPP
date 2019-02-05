@@ -580,7 +580,6 @@ __global__ void elemLPnts_nsgl(const float k, const int l, const triElem *elems,
             A[IDXC0(idx,idx,lda)] = cuCsubf(A[IDXC0(idx,idx,lda)],make_cuFloatComplex(cCoeff,0));
         }
         
-        
         //Update the B matrix
         bc = cuCdivf(elems[l].bc[2],elems[l].bc[1]);
         for(i=0;i<numSrcs;i++) {
