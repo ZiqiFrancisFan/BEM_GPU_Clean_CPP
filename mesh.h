@@ -18,17 +18,13 @@
 #include <cuda_runtime.h>
 #include <math_constants.h>
 
-
-
-using namespace std;
-
 class cartCoord2D;
 class triElem;
 class mesh;
 
 //class cartCoord
 class cartCoord {
-    friend ostream& operator<<(ostream&,const cartCoord&);
+    friend std::ostream& operator<<(std::ostream&,const cartCoord&);
     
     friend __host__ __device__ cartCoord numDvd(const cartCoord&,const float);
     
@@ -94,7 +90,7 @@ public:
     
 };
 
-ostream& operator<<(ostream&,const cartCoord&);
+std::ostream& operator<<(std::ostream&,const cartCoord&);
 
 __host__ __device__ cartCoord numDvd(const cartCoord&,const float);
 
@@ -128,7 +124,7 @@ __host__ __device__ float pPsiLpn2(const cartCoord,const cartCoord,const cartCoo
 
 //class triElem
 class triElem {
-    friend ostream& operator<<(ostream&,const triElem&);
+    friend std::ostream& operator<<(std::ostream&,const triElem&);
     
     friend __global__ void test(cartCoord *pnts, triElem *elems);
     
@@ -167,13 +163,13 @@ public:
     __host__ __device__ triElem& operator=(const triElem&);
 };
 
-ostream& operator<<(ostream&,const triElem&);
+std::ostream& operator<<(std::ostream&,const triElem&);
 
 
 
 //class mesh
 class mesh {
-    friend ostream& operator<<(ostream&,const mesh&);
+    friend std::ostream& operator<<(std::ostream&,const mesh&);
     
     friend __global__ void rayTrnglsInt(const cartCoord,const cartCoord,
     const cartCoord*,const triElem*,const int,bool*);
@@ -212,7 +208,7 @@ public:
     int getNumElems() {return numElems;}
 };
 
-ostream& operator<<(ostream&,const mesh&);
+std::ostream& operator<<(std::ostream&,const mesh&);
 
 __global__ void rayTrnglsInt(const cartCoord*,const triElem*,bool*);
 

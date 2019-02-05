@@ -20,6 +20,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include "device_launch_parameters.h"
+#include <cublas_v2.h>
 #include "mesh.h"
 #include <algorithm>
 #include <vector>
@@ -29,18 +30,22 @@
 //#include <gsl/gsl_complex.h>
 #include <gsl/gsl_complex_math.h>
 #include <gsl/gsl_blas.h>
-using namespace std;
+
 
 #ifndef PI
 #define PI 3.1415926535897932
 #endif
 
 #ifndef INTORDER
-#define INTORDER 8
+#define INTORDER 7
 #endif
 
 #ifndef IDXC0
 #define IDXC0(row,col,ld) ((ld)*(col)+(row))
+#endif
+
+#ifndef IDXC1
+#define IDXC1(row,col,ld) (ld*(col-1)+(row-1))
 #endif
 
 #ifndef max
@@ -70,6 +75,26 @@ return EXIT_FAILURE;}} while(0)
 if((x)!=CURAND_STATUS_SUCCESS) {\
 printf("Error at %s:%d\n",__FILE__,__LINE__);\
 return EXIT_FAILURE;}} while(0)
+#endif
+
+#ifndef CUBLAS_CALL
+#define CUBLAS_CALL(x) \
+do {\
+if((x)!=CUBLAS_STATUS_SUCCESS)\
+{\
+printf("Error at %s:%d\n",__FILE__,__LINE__); \
+if(x==CUBLAS_STATUS_NOT_INITIALIZED) { \
+printf("The library was not initialized.\n"); \
+}\
+if(x==CUBLAS_STATUS_INVALID_VALUE) {\
+printf("There were problems with the parameters.\n");\
+}\
+if(x==CUBLAS_STATUS_MAPPING_ERROR) {\
+printf("There was an error accessing GPU memory.\n"); \
+}\
+return EXIT_FAILURE; } \
+}\
+while(0)
 #endif
 
 #ifndef EPS
@@ -105,13 +130,13 @@ __host__ __device__ float arrayMin(const float*,const int);
 
 __host__ __device__ bool inObj(const bool*,const int);
 
-ostream& operator<<(ostream&,const cuFloatComplex&);
+std::ostream& operator<<(std::ostream&,const cuFloatComplex&);
 
 int Test();
 
 //class gaussQuad
 class gaussQuad {
-    friend ostream& operator<<(ostream&,const gaussQuad&);
+    friend std::ostream& operator<<(std::ostream&,const gaussQuad&);
 private:
     float *evalPnts = NULL;
     float *wgts = NULL;
@@ -131,8 +156,10 @@ public:
     
     int sendToDevice();
     
-    
 };
+
+__host__ int lsqSolver(cuFloatComplex *A_h,const int m,const int n,const int lda,
+        cuFloatComplex *B_h,const int nrhs,const int ldb, cuFloatComplex *Q_h);
 
 
 

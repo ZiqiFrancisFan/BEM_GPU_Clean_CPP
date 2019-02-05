@@ -37,7 +37,7 @@ int Test() {
     cartCoord dirCHIEF(1.1,1,1);
     rayTrnglsInt<<<numBlocks,width>>>(sp,dirCHIEF,pnts_d,elems_d,m.numElems,flags_d);
     CUDA_CALL(cudaMemcpy(flags,flags_d,m.numElems*sizeof(bool),cudaMemcpyDeviceToHost));
-    cout << inObj(flags,m.numElems) << endl;
+    std::cout << inObj(flags,m.numElems) << std::endl;
     CUDA_CALL(cudaFree(pnts_d));
     CUDA_CALL(cudaFree(elems_d));
     CUDA_CALL(cudaFree(flags_d));
@@ -46,7 +46,7 @@ int Test() {
     return EXIT_SUCCESS;
 }
 
-ostream& operator<<(ostream &out, const cuFloatComplex &rhs) {
+std::ostream& operator<<(std::ostream &out, const cuFloatComplex &rhs) {
     out << "(" << cuCrealf(rhs) << "," << cuCimagf(rhs) << ")";
     return out;
 }
@@ -225,16 +225,332 @@ int gaussQuad::sendToDevice() {
     return EXIT_SUCCESS;
 }
 
-ostream& operator<<(ostream &out, const gaussQuad &rhs) {
-    out << "Points: " << endl;
+std::ostream& operator<<(std::ostream &out, const gaussQuad &rhs) {
+    out << "Points: " << std::endl;
     for(int i=0;i<rhs.n;i++) {
         out << rhs.evalPnts[i] << " ";
     }
-    out << endl;
-    out << "Weights: " << endl;
+    out << std::endl;
+    out << "Weights: " << std::endl;
     for(int i=0;i<rhs.n;i++) {
         out << rhs.wgts[i] << " ";
     }
     return out;
 }
+
+__host__ int QR_thin(cuFloatComplex *A_h, const int m, const int n, const int lda, 
+        const int r, cuFloatComplex *Q_h, const int ldq) {
+    //CUDA_CALL(cudaDeviceSynchronize());
+    //CUDA_CALL(cudaDeviceReset());
+    if(m<=n) {
+        printf("Not a thin matrix, Error.\n");
+        return EXIT_FAILURE;
+    }
+    cublasHandle_t handle;
+    CUBLAS_CALL(cublasCreate(&handle));
+    CUBLAS_CALL(cublasSetPointerMode(handle,CUBLAS_POINTER_MODE_HOST)); //switch to host pointer mode
+    int i, j, k, u, s;
+    cuFloatComplex *A_d, *Q_d; //global memory for A_h and Q_h memory space
+    CUDA_CALL(cudaMalloc((void**)&A_d,m*n*sizeof(cuFloatComplex)));
+    CUBLAS_CALL(cublasSetMatrix(m,n,sizeof(cuFloatComplex),A_h,lda,A_d,m));
+    CUDA_CALL(cudaMalloc((void**)&Q_d,m*m*sizeof(cuFloatComplex)));
+    for(i=0;i<m;i++) {
+        for(j=0;j<m;j++) {
+            if(i == j) {
+                Q_h[IDXC0(i,j,ldq)] = make_cuFloatComplex(1,0);
+            }
+            else {
+                Q_h[IDXC0(i,j,ldq)] = make_cuFloatComplex(0,0);
+            }
+        }
+    }
+    CUBLAS_CALL(cublasSetMatrix(m,m,sizeof(cuFloatComplex),Q_h,ldq,Q_d,m));
+    cublasGetMatrix(m,m,sizeof(cuFloatComplex),Q_d,m,Q_h,ldq);
+    //printf("The Initialized Q_d is: \n");
+    //printMatrix_complex(Q_h,m,m,ldq);
+    //printf("\n");
+    
+    cuFloatComplex *v_d;
+    CUDA_CALL(cudaMalloc((void**)&v_d,m*sizeof(cuFloatComplex)));
+    cuFloatComplex *v_h;
+    v_h = (cuFloatComplex*)malloc(m*sizeof(cuFloatComplex));
+    float beta;
+    cuFloatComplex x1, temp, temp_alpha, temp_beta;
+    float x1_r, x1_i, x1_mag, x_nrm;
+    
+    cuFloatComplex *prod_bvA; //for saving the intermediate result for beta*v^H*A()
+    CUDA_CALL(cudaMalloc((void**)&prod_bvA,r*sizeof(cuFloatComplex)));
+    cuFloatComplex *prod_bvA_h;
+    prod_bvA_h = (cuFloatComplex*)malloc(r*sizeof(cuFloatComplex));
+    
+    cuFloatComplex *V_d;
+    CUDA_CALL(cudaMalloc((void**)&V_d,m*r*sizeof(cuFloatComplex)));
+    float *B_h;
+    B_h = (float*)malloc(r*sizeof(float));
+    cuFloatComplex *zeros_h;
+    zeros_h = (cuFloatComplex*)malloc(r*sizeof(cuFloatComplex));
+    for(i=0;i<r;i++) {
+        zeros_h[i] = make_cuFloatComplex(0,0);
+    }
+    
+    cuFloatComplex *Y_d, *W_d;
+    CUDA_CALL(cudaMalloc((void**)&Y_d,m*r*sizeof(cuFloatComplex)));
+    CUDA_CALL(cudaMalloc((void**)&W_d,m*r*sizeof(cuFloatComplex)));
+    cuFloatComplex *prod_Yv; //for saving the product of Y and v, of length r;
+    CUDA_CALL(cudaMalloc((void**)&prod_Yv,r*sizeof(cuFloatComplex)));
+    cuFloatComplex *prod_Yv_h;
+    prod_Yv_h = (cuFloatComplex*)malloc(r*sizeof(cuFloatComplex));
+    cuFloatComplex *z_d; //aid vector
+    CUDA_CALL(cudaMalloc((void**)&z_d,m*sizeof(cuFloatComplex)));
+    cuFloatComplex *prod_WA, *prod_QW; //intermediate results
+    CUDA_CALL(cudaMalloc((void**)&prod_WA,r*n*sizeof(cuFloatComplex)));
+    CUDA_CALL(cudaMalloc((void**)&prod_QW,m*r*sizeof(cuFloatComplex)));
+    
+    for(k=1;k<=n/r;k++) {
+        //printf("k=%d\n",k);
+        s = (k-1)*r+1; //the first colum in the current block
+        for(j=1;j<=r;j++) {
+            u = s+j-1;
+            //printf("u=%d\n",u);
+            CUDA_CALL(cudaMemcpy(&x1,&A_d[IDXC1(u,u,m)],sizeof(cuFloatComplex),cudaMemcpyDeviceToHost));
+            //printf("x1=(%f,%f)\n",cuCrealf(x1),cuCimagf(x1));
+            x1_r = cuCrealf(x1);
+            x1_i = cuCimagf(x1);
+            x1_mag = sqrtf(powf(x1_r,2)+powf(x1_i,2));
+            x1_r = x1_r/x1_mag;
+            x1_i = x1_i/x1_mag;
+            CUBLAS_CALL(cublasScnrm2(handle,m-u+1,&A_d[IDXC1(u,u,m)],1,&x_nrm));
+            //printf("x_nrm = %f\n", x_nrm);
+            temp = make_cuFloatComplex(x1_r*x_nrm,x1_i*x_nrm);
+            temp = cuCsubf(x1,temp);
+            CUDA_CALL(cudaMemcpy(v_d,&A_d[IDXC1(u,u,m)],(m-u+1)*sizeof(cuFloatComplex),cudaMemcpyDeviceToDevice));
+            CUDA_CALL(cudaMemcpy(v_d,&temp,sizeof(cuFloatComplex),cudaMemcpyHostToDevice)); //v in house transform derived
+            //CUDA_CALL(cudaMemcpy(v_h,v_d,(m-u+1)*sizeof(cuFloatComplex),cudaMemcpyDeviceToHost));
+            //printf("v_d: \n");
+            //printMatrix_complex(v_h,1,m-u+1,1);
+            CUBLAS_CALL(cublasScnrm2(handle,m-u+1,v_d,1,&beta));
+            beta = 2.0/powf(beta,2);
+            //printf("beta = %f\n",beta);
+            temp_alpha = make_cuFloatComplex(beta,0);
+            temp_beta = make_cuFloatComplex(0,0);
+            CUBLAS_CALL(cublasCgemm(handle,CUBLAS_OP_C,CUBLAS_OP_N,1,s+r-u,m-u+1,&temp_alpha,v_d,m,&A_d[IDXC1(u,u,m)],m,
+                    &temp_beta,prod_bvA,1));
+            //CUDA_CALL(cudaMemcpy(prod_bvA_h,prod_bvA,(s+r-u)*sizeof(cuFloatComplex),cudaMemcpyDeviceToHost));
+            //printf("prod_bvA: \n");
+            //printMatrix_complex(prod_bvA_h,1,s+r-u,1);
+            //printf("\n");
+            temp_alpha = make_cuFloatComplex(-1,0);
+            temp_beta = make_cuFloatComplex(1,0);
+            CUBLAS_CALL(cublasCgemm(handle,CUBLAS_OP_N,CUBLAS_OP_N,m-u+1,s+r-u,1,&temp_alpha,v_d,m,prod_bvA,1,
+                    &temp_beta,&A_d[IDXC1(u,u,m)],m));
+            CUDA_CALL(cudaMemcpy(&V_d[IDXC1(j,j,m)],v_d,(m-u+1)*sizeof(cuFloatComplex),cudaMemcpyDeviceToDevice));
+            CUBLAS_CALL(cublasSetVector(j-1,sizeof(cuFloatComplex),zeros_h,1,&V_d[IDXC1(1,j,m)],1));
+            B_h[j-1] = beta;
+            
+        }
+        CUDA_CALL(cudaMemcpy(Y_d,V_d,(m-s+1)*sizeof(cuFloatComplex),cudaMemcpyDeviceToDevice));
+        temp_alpha = make_cuFloatComplex(-B_h[0],0);
+        CUBLAS_CALL(cublasSetVector(m-s+1,sizeof(cuFloatComplex),V_d,1,W_d,1));
+        CUBLAS_CALL(cublasCscal(handle,m-s+1,&temp_alpha,W_d,1));
+        for(j=2;j<=r;j++) {
+            CUDA_CALL(cudaMemcpy(v_d,&V_d[IDXC1(1,j,m)],(m-s+1)*sizeof(cuFloatComplex),cudaMemcpyDeviceToDevice));
+            temp_alpha = make_cuFloatComplex(1,0);
+            temp_beta = make_cuFloatComplex(0,0);
+            CUBLAS_CALL(cublasCgemv(handle,CUBLAS_OP_C,m-s+1,j-1,&temp_alpha,Y_d,m,v_d,1,&temp_beta,prod_Yv,1));
+            //CUDA_CALL(cudaMemcpy(prod_Yv_h,prod_Yv,(j-1)*sizeof(cuFloatComplex),cudaMemcpyDeviceToHost));
+            //printf("Yv = \n");
+            //printMatrix_complex(prod_Yv_h,1,j-1,1);
+            temp_alpha = make_cuFloatComplex(-B_h[j-1],0);
+            temp_beta = make_cuFloatComplex(-B_h[j-1],0);
+            CUDA_CALL(cudaMemcpy(z_d,v_d,(m-s+1)*sizeof(cuFloatComplex),cudaMemcpyDeviceToDevice));
+            CUBLAS_CALL(cublasCgemv(handle,CUBLAS_OP_N,m-s+1,j-1,&temp_alpha,W_d,m,prod_Yv,1,&temp_beta,z_d,1));
+            CUDA_CALL(cudaMemcpy(&W_d[IDXC1(1,j,m)],z_d,(m-s+1)*sizeof(cuFloatComplex),cudaMemcpyDeviceToDevice));
+            CUDA_CALL(cudaMemcpy(&Y_d[IDXC1(1,j,m)],v_d,(m-s+1)*sizeof(cuFloatComplex),cudaMemcpyDeviceToDevice));
+        }
+        if(s+r <= n) {
+            temp_alpha = make_cuFloatComplex(1,0);
+            temp_beta = make_cuFloatComplex(0,0);
+            CUBLAS_CALL(cublasCgemm(handle,CUBLAS_OP_C,CUBLAS_OP_N,r,n-s-r+1,m-s+1,&temp_alpha,W_d,m,&A_d[IDXC1(s,s+r,m)],m,
+                    &temp_beta,prod_WA,r));
+            temp_alpha = make_cuFloatComplex(1,0);
+            temp_beta = make_cuFloatComplex(1,0);
+            CUBLAS_CALL(cublasCgemm(handle,CUBLAS_OP_N,CUBLAS_OP_N,m-s+1,n-s-r+1,r,&temp_alpha,Y_d,m,prod_WA,r,
+                    &temp_beta,&A_d[IDXC1(s,s+r,m)],m));
+            //CUBLAS_CALL(cublasGetMatrix(m,n,sizeof(cuFloatComplex),A_d,m,A_h,lda));
+            //printf("The current A is: \n");
+            //printMatrix_complex(A_h,m,n,lda);
+            //printf("\n");
+        }
+        temp_alpha = make_cuFloatComplex(1,0);
+        temp_beta = make_cuFloatComplex(0,0);
+        CUBLAS_CALL(cublasCgemm(handle,CUBLAS_OP_N,CUBLAS_OP_N,m,r,m-s+1,&temp_alpha,&Q_d[IDXC1(1,s,m)],m,W_d,m,
+                &temp_beta,prod_QW,m));
+        temp_alpha = make_cuFloatComplex(1,0);
+        temp_beta = make_cuFloatComplex(1,0);
+        CUBLAS_CALL(cublasCgemm(handle,CUBLAS_OP_N,CUBLAS_OP_C,m,m-s+1,r,&temp_alpha,prod_QW,m,Y_d,m,
+                &temp_beta,&Q_d[IDXC1(1,s,m)],m));
+    }
+    //printf("k=%d, k*r=%d\n",k,k*r);
+    if(r*(n/r) < n) { // there still remains columns unprocessed
+        //printf("Entering the remaining block.\n");
+        s = r*(n/r)+1;
+        for(j=1;j<=n-r*(n/r);j++) {
+            u = s+j-1;
+            //printf("u=%d\n",u);
+            CUDA_CALL(cudaMemcpy(&x1,&A_d[IDXC1(u,u,m)],sizeof(cuFloatComplex),cudaMemcpyDeviceToHost));
+            //printf("x1=(%f,%f)\n",cuCrealf(x1),cuCimagf(x1));
+            x1_r = cuCrealf(x1);
+            x1_i = cuCimagf(x1);
+            x1_mag = sqrtf(powf(x1_r,2)+powf(x1_i,2));
+            x1_r = x1_r/x1_mag;
+            x1_i = x1_i/x1_mag;
+            CUBLAS_CALL(cublasScnrm2(handle,m-u+1,&A_d[IDXC1(u,u,m)],1,&x_nrm));
+            //printf("x_nrm = %f\n", x_nrm);
+            temp = make_cuFloatComplex(x1_r*x_nrm,x1_i*x_nrm);
+            temp = cuCsubf(x1,temp);
+            CUDA_CALL(cudaMemcpy(v_d,&A_d[IDXC1(u,u,m)],(m-u+1)*sizeof(cuFloatComplex),cudaMemcpyDeviceToDevice));
+            CUDA_CALL(cudaMemcpy(v_d,&temp,sizeof(cuFloatComplex),cudaMemcpyHostToDevice)); //v in house transform derived
+            //CUDA_CALL(cudaMemcpy(v_h,v_d,(m-u+1)*sizeof(cuFloatComplex),cudaMemcpyDeviceToHost));
+            //printf("v_d: \n");
+            //printMatrix_complex(v_h,1,m-u+1,1);
+            CUBLAS_CALL(cublasScnrm2(handle,m-u+1,v_d,1,&beta));
+            beta = 2.0/powf(beta,2);
+            //printf("beta = %f\n",beta);
+            temp_alpha = make_cuFloatComplex(beta,0);
+            temp_beta = make_cuFloatComplex(0,0);
+            CUBLAS_CALL(cublasCgemm(handle,CUBLAS_OP_C,CUBLAS_OP_N,1,s+(n-r*(n/r))-u,m-u+1,&temp_alpha,v_d,m,&A_d[IDXC1(u,u,m)],m,
+                    &temp_beta,prod_bvA,1));
+            //CUDA_CALL(cudaMemcpy(prod_bvA_h,prod_bvA,(s+r-u)*sizeof(cuFloatComplex),cudaMemcpyDeviceToHost));
+            //printf("prod_bvA: \n");
+            //printMatrix_complex(prod_bvA_h,1,s+(n-r*(n/r))-u,1);
+            //printf("\n");
+            temp_alpha = make_cuFloatComplex(-1,0);
+            temp_beta = make_cuFloatComplex(1,0);
+            CUBLAS_CALL(cublasCgemm(handle,CUBLAS_OP_N,CUBLAS_OP_N,m-u+1,s+(n-r*(n/r))-u,1,&temp_alpha,v_d,m,prod_bvA,1,
+                    &temp_beta,&A_d[IDXC1(u,u,m)],m));
+            CUDA_CALL(cudaMemcpy(&V_d[IDXC1(j,j,m)],v_d,(m-u+1)*sizeof(cuFloatComplex),cudaMemcpyDeviceToDevice));
+            CUBLAS_CALL(cublasSetVector(j-1,sizeof(cuFloatComplex),zeros_h,1,&V_d[IDXC1(1,j,m)],1));
+            B_h[j-1] = beta;
+            
+        }
+        CUDA_CALL(cudaMemcpy(Y_d,V_d,(m-s+1)*sizeof(cuFloatComplex),cudaMemcpyDeviceToDevice));
+        temp_alpha = make_cuFloatComplex(-B_h[0],0);
+        CUBLAS_CALL(cublasSetVector(m-s+1,sizeof(cuFloatComplex),V_d,1,W_d,1));
+        CUBLAS_CALL(cublasCscal(handle,m-s+1,&temp_alpha,W_d,1));
+        for(j=2;j<=n-r*(n/r);j++) {
+            CUDA_CALL(cudaMemcpy(v_d,&V_d[IDXC1(1,j,m)],(m-s+1)*sizeof(cuFloatComplex),cudaMemcpyDeviceToDevice));
+            temp_alpha = make_cuFloatComplex(1,0);
+            temp_beta = make_cuFloatComplex(0,0);
+            CUBLAS_CALL(cublasCgemv(handle,CUBLAS_OP_C,m-s+1,j-1,&temp_alpha,Y_d,m,v_d,1,&temp_beta,prod_Yv,1));
+            //CUDA_CALL(cudaMemcpy(prod_Yv_h,prod_Yv,(j-1)*sizeof(cuFloatComplex),cudaMemcpyDeviceToHost));
+            //printf("Yv = \n");
+            //printMatrix_complex(prod_Yv_h,1,j-1,1);
+            temp_alpha = make_cuFloatComplex(-B_h[j-1],0);
+            temp_beta = make_cuFloatComplex(-B_h[j-1],0);
+            CUDA_CALL(cudaMemcpy(z_d,v_d,(m-s+1)*sizeof(cuFloatComplex),cudaMemcpyDeviceToDevice));
+            CUBLAS_CALL(cublasCgemv(handle,CUBLAS_OP_N,m-s+1,j-1,&temp_alpha,W_d,m,prod_Yv,1,&temp_beta,z_d,1));
+            CUDA_CALL(cudaMemcpy(&W_d[IDXC1(1,j,m)],z_d,(m-s+1)*sizeof(cuFloatComplex),cudaMemcpyDeviceToDevice));
+            CUDA_CALL(cudaMemcpy(&Y_d[IDXC1(1,j,m)],v_d,(m-s+1)*sizeof(cuFloatComplex),cudaMemcpyDeviceToDevice));
+        }
+        if(s+r <= n) {
+            temp_alpha = make_cuFloatComplex(1,0);
+            temp_beta = make_cuFloatComplex(0,0);
+            CUBLAS_CALL(cublasCgemm(handle,CUBLAS_OP_C,CUBLAS_OP_N,r,n-s-r+1,m-s+1,&temp_alpha,W_d,m,&A_d[IDXC1(s,s+r,m)],m,
+                    &temp_beta,prod_WA,r));
+            temp_alpha = make_cuFloatComplex(1,0);
+            temp_beta = make_cuFloatComplex(1,0);
+            CUBLAS_CALL(cublasCgemm(handle,CUBLAS_OP_N,CUBLAS_OP_N,m-s+1,n-s-r+1,r,&temp_alpha,Y_d,m,prod_WA,r,
+                    &temp_beta,&A_d[IDXC1(s,s+r,m)],m));
+            //CUBLAS_CALL(cublasGetMatrix(m,n,sizeof(cuFloatComplex),A_d,m,A_h,lda));
+            //printf("The current A is: \n");
+            //printMatrix_complex(A_h,m,n,lda);
+            //printf("\n");
+        }
+        temp_alpha = make_cuFloatComplex(1,0);
+        temp_beta = make_cuFloatComplex(0,0);
+        CUBLAS_CALL(cublasCgemm(handle,CUBLAS_OP_N,CUBLAS_OP_N,m,n-r*(n/r),m-s+1,&temp_alpha,&Q_d[IDXC1(1,s,m)],m,W_d,m,
+                &temp_beta,prod_QW,m));
+        temp_alpha = make_cuFloatComplex(1,0);
+        temp_beta = make_cuFloatComplex(1,0);
+        CUBLAS_CALL(cublasCgemm(handle,CUBLAS_OP_N,CUBLAS_OP_C,m,m-s+1,n-r*(n/r),&temp_alpha,prod_QW,m,Y_d,m,
+                &temp_beta,&Q_d[IDXC1(1,s,m)],m));
+    }
+    CUBLAS_CALL(cublasGetMatrix(m,n,sizeof(cuFloatComplex),A_d,m,A_h,lda));
+    CUBLAS_CALL(cublasGetMatrix(m,m,sizeof(cuFloatComplex),Q_d,m,Q_h,ldq));
+    free(B_h);
+    free(zeros_h);
+    free(prod_Yv_h);
+    free(v_h);
+    free(prod_bvA_h);
+    cudaFree(A_d);
+    cudaFree(Q_d);
+    cudaFree(v_d);
+    cudaFree(V_d);
+    cudaFree(z_d);
+    cudaFree(Y_d);
+    cudaFree(W_d);
+    cudaFree(prod_QW);
+    cudaFree(prod_WA);
+    cudaFree(prod_Yv);
+    cudaFree(prod_bvA);
+    CUBLAS_CALL(cublasDestroy(handle));
+    CUDA_CALL(cudaDeviceSynchronize());
+    //CUDA_CALL(cudaDeviceReset());
+    return EXIT_SUCCESS;
+}
+
+__host__ int lsqSolver(cuFloatComplex *A_h, const int m, const int n, const int lda,
+        cuFloatComplex *B_h, const int nrhs, const int ldb, cuFloatComplex *Q_h) {
+    if(m>n) {
+        clock_t t;
+        t = clock();
+        cuFloatComplex *temp;
+        //printf("A_h: \n");
+        //printMatrix_complex(A_h,10,10,lda);
+        //printf("Q_h: \n");
+        //printMatrix_complex(Q_h,10,10,m);
+        HOST_CALL(QR_thin(A_h,m,n,lda,32,Q_h,m));
+	CUDA_CALL(cudaDeviceSynchronize());
+        //printf("A_h: \n");
+        //printMatrix_complex(A_h,10,10,lda);
+        //printf("Q_h: \n");
+        //printMatrix_complex(Q_h,10,10,m);
+        //CUDA_CALL(cudaDeviceReset());
+        cublasHandle_t cublasH;
+        cublasCreate(&cublasH);
+        cublasSetPointerMode(cublasH,CUBLAS_POINTER_MODE_HOST);
+        cuFloatComplex *Q_d, *R_d, *B_d;
+        CUDA_CALL(cudaMalloc((void**)&Q_d,m*m*sizeof(cuFloatComplex)));
+        CUDA_CALL(cudaMalloc((void**)&R_d,m*n*sizeof(cuFloatComplex)));
+        CUDA_CALL(cudaMalloc((void**)&B_d,m*nrhs*sizeof(cuFloatComplex)));
+        CUBLAS_CALL(cublasSetMatrix(m,n,sizeof(cuFloatComplex),A_h,lda,R_d,m));
+        CUBLAS_CALL(cublasSetMatrix(m,m,sizeof(cuFloatComplex),Q_h,m,Q_d,m));
+        CUBLAS_CALL(cublasSetMatrix(m,nrhs,sizeof(cuFloatComplex),B_h,ldb,B_d,m));
+        CUDA_CALL(cudaMalloc((void**)&temp,m*nrhs*sizeof(cuFloatComplex)));
+        CUDA_CALL(cudaMemcpy(temp,B_d,m*nrhs*sizeof(cuFloatComplex),cudaMemcpyDeviceToDevice));
+        cuFloatComplex alpha = make_cuFloatComplex(1,0), beta = make_cuFloatComplex(0,0);
+        CUBLAS_CALL(cublasCgemm(cublasH,CUBLAS_OP_C,CUBLAS_OP_N,m,nrhs,m,&alpha,Q_d,m,temp,m,
+                &beta,B_d,m));
+        CUDA_CALL(cudaFree(temp));
+        CUBLAS_CALL(cublasCtrsm(cublasH,CUBLAS_SIDE_LEFT,CUBLAS_FILL_MODE_UPPER,CUBLAS_OP_N,
+                CUBLAS_DIAG_NON_UNIT,n,nrhs,&alpha,R_d,m,B_d,m));
+        CUBLAS_CALL(cublasGetMatrix(n,nrhs,sizeof(cuFloatComplex),B_d,m,B_h,ldb));
+        CUDA_CALL(cudaFree(Q_d));
+        CUDA_CALL(cudaFree(R_d));
+        CUDA_CALL(cudaFree(B_d));
+        
+        CUBLAS_CALL(cublasDestroy(cublasH));
+        t = clock()-t;
+        printf("elapsed %f seconds in the least square solver.\n",((float)t)/CLOCKS_PER_SEC);
+    }
+    else {
+        printf("Senario not included yet.");
+        return EXIT_FAILURE;
+    }
+    CUDA_CALL(cudaDeviceSynchronize());
+    //CUDA_CALL(cudaDeviceReset());
+    return EXIT_SUCCESS;
+}
+
+
 

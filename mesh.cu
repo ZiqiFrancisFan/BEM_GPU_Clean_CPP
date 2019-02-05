@@ -26,7 +26,7 @@ __host__ __device__ void cartCoord::set(const float x, const float y, const floa
     coords[2] = z;
 }
 
-ostream& operator<<(ostream &out,const cartCoord &rhs) {
+std::ostream& operator<<(std::ostream &out,const cartCoord &rhs) {
     out << "(" << rhs.coords[0] << "," << rhs.coords[1] << "," << rhs.coords[2] 
             << ")";
     return out;
@@ -581,7 +581,7 @@ __global__ void elemLPnts_nsgl(const float k, const int l, const triElem *elems,
         bc = cuCdivf(elems[l].bc[2],elems[l].bc[1]);
         for(i=0;i<numSrcs;i++) {
             for(j=0;j<3;j++) {
-                B[IDXC0(idx,i,ldb)] = cuCsubf(B[IDXC0(idx,i,ldb)],cuCmulf(bc,gCoeffs[i]));
+                B[IDXC0(idx,i,ldb)] = cuCsubf(B[IDXC0(idx,i,ldb)],cuCmulf(bc,gCoeffs[j]));
             }
         }       
     }
@@ -721,6 +721,8 @@ int genSystem(const float k, const triElem *elems, const int numElems,
             B[IDXC0(i,j,ldb)] = green2(k,srcs[j],pnts[i]);
         }
     }
+    //printComplexMatrix(B,numNods+numCHIEF,numSrcs,numNods+numCHIEF);
+    
     
     triElem *elems_d;
     CUDA_CALL(cudaMalloc(&elems_d,numElems*sizeof(triElem)));
@@ -741,7 +743,7 @@ int genSystem(const float k, const triElem *elems, const int numElems,
     numBlocks = (numNods+numCHIEF+width-1)/width;
     
     for(l=0;l<numElems;l++) {
-        //cout << "The current element: " << l << endl;
+        std::cout << "The current element: " << l << std::endl;
         elemLPnts_nsgl<<<numBlocks,width>>>(k,l,elems_d,pnts_d,numNods,numCHIEF,A_d,lda,B_d,numSrcs,ldb);
     }
     
@@ -763,6 +765,7 @@ int genSystem(const float k, const triElem *elems, const int numElems,
     cCoeffs_sgl2 = new float[numElems];
     cCoeffs_sgl3 = new float[numElems];
     
+    
     CUDA_CALL(cudaMalloc(&hCoeffs_sgl1_d,3*numElems*sizeof(cuFloatComplex)));
     CUDA_CALL(cudaMalloc(&hCoeffs_sgl2_d,3*numElems*sizeof(cuFloatComplex)));
     CUDA_CALL(cudaMalloc(&hCoeffs_sgl3_d,3*numElems*sizeof(cuFloatComplex)));
@@ -779,6 +782,7 @@ int genSystem(const float k, const triElem *elems, const int numElems,
     elemsPnts_sgl<<<numBlocks,width>>>(k,elems_d,numElems,pnts_d,hCoeffs_sgl1_d,hCoeffs_sgl2_d,hCoeffs_sgl3_d,
             gCoeffs_sgl1_d,gCoeffs_sgl2_d,gCoeffs_sgl3_d,cCoeffs_sgl1_d,cCoeffs_sgl2_d,
             cCoeffs_sgl3_d);
+    //CUDA_CALL(cudaDeviceSynchronize());
     
     CUDA_CALL(cudaMemcpy(hCoeffs_sgl1,hCoeffs_sgl1_d,3*numElems*sizeof(cuFloatComplex),
             cudaMemcpyDeviceToHost));
@@ -857,6 +861,7 @@ int bemSystem(const mesh &m, const float k, const cartCoord *srcs, const int num
     }
     HOST_CALL(genSystem(k,m.elems,m.numElems,pnts,m.numPnts,m.numCHIEF,srcs,numSrcs,A,lda,B,ldb));
     delete[] pnts;
+    
     return EXIT_SUCCESS;
 }
 
@@ -953,7 +958,7 @@ __host__ __device__ triElem& triElem::operator=(const triElem &rhs) {
     return *this;
 }
 
-ostream& operator<<(ostream &out, const triElem &rhs) {
+std::ostream& operator<<(std::ostream &out, const triElem &rhs) {
     out << "nodes indices: " << rhs.nodes[0] << ", " << rhs.nodes[1] << ", " 
             << rhs.nodes[2] << " boundary condition: " << "A = " << rhs.bc[0] 
             << ", B = " << rhs.bc[1] << ", C = " << rhs.bc[2];
@@ -963,8 +968,8 @@ ostream& operator<<(ostream &out, const triElem &rhs) {
 //class mesh
 int mesh::readObj(const char *file) {
     int temp[3];
-    vector<cartCoord> pntVec; 
-    vector<triElem> elemVec;
+    std::vector<cartCoord> pntVec; 
+    std::vector<triElem> elemVec;
     cartCoord pnt;
     triElem elem;
     FILE *fp = fopen(file,"r");
@@ -988,7 +993,7 @@ int mesh::readObj(const char *file) {
             elem.nodes[2] = temp[2]-1;
             elem.bc[0] = make_cuFloatComplex(0,0); // ca=0
             elem.bc[1] = make_cuFloatComplex(1,0); // cb=1
-            elem.bc[2] = make_cuFloatComplex(0,0); // cc=0
+            elem.bc[2] = make_cuFloatComplex(-1,0); // cc=0
             elemVec.push_back(elem);
         }
     }
@@ -1099,17 +1104,17 @@ mesh& mesh::operator=(const mesh &rhs) {
 }
 
 void mesh::printBB() {
-    cout << "Lower x: " << xl << "Higher x: " << xu << "Lower y: " << yl 
-            << "Higher y: " << yu << "Lower z: " << zl << "Higher z: " << zu << endl;
+    std::cout << "Lower x: " << xl << "Higher x: " << xu << "Lower y: " << yl 
+            << "Higher y: " << yu << "Lower z: " << zl << "Higher z: " << zu << std::endl;
 }
 
-ostream& operator<<(ostream &out, const mesh &rhs) {
+std::ostream& operator<<(std::ostream &out, const mesh &rhs) {
     for(int i=0;i<rhs.numPnts;i++) {
-        cout << rhs.pnts[i] << endl;
+        std::cout << rhs.pnts[i] << std::endl;
     }
     
     for(int i=0;i<rhs.numElems;i++) {
-        cout << rhs.elems[i] << endl;
+        std::cout << rhs.elems[i] << std::endl;
     }
     
     return out;
@@ -1152,7 +1157,7 @@ int mesh::findBB(const float threshold) {
         
         return EXIT_SUCCESS;
     } else {
-        cout << "Not enough mesh information!" << endl;
+        std::cout << "Not enough mesh information!" << std::endl;
         return EXIT_FAILURE;
     }
 }
@@ -1218,7 +1223,7 @@ int mesh::genCHIEF(const int num, const float threshold) {
             CUDA_CALL(cudaMemcpy(dists,dists_d,numPnts*sizeof(float),cudaMemcpyDeviceToHost));
             //printf("Minimum distance: %f\n",arrayMin(dists,numPnts));
             
-            //cout << inObj(flags,numElems) << endl;
+            //cout << inObj(flags,numElems) << std::endl;
         } while((!inObj(flags,numElems))||(arrayMin(dists,numPnts)<threshold));
         chiefPnts[cnt].set(xRand,yRand,zRand);
         cnt++;
@@ -1237,7 +1242,7 @@ int mesh::genCHIEF(const int num, const float threshold) {
 
 void mesh::printCHIEF() {
     for(int i=0;i<numCHIEF;i++) {
-        cout << chiefPnts[i] << endl;
+        std::cout << chiefPnts[i] << std::endl;
     }
 }
 
@@ -1262,7 +1267,7 @@ int mesh::chiefToGPU(cartCoord **pchiefPnts) {
 
 int mesh::meshToGPU(cartCoord **pPnts_d, triElem **pElems_d) const {
     if(numPnts==0 || numElems==0 || numCHIEF==0) {
-        cout << "The mesh object is incomplete." << endl;
+        std::cout << "The mesh object is incomplete." << std::endl;
         return EXIT_FAILURE;
     } else {
         int i;
