@@ -556,14 +556,15 @@ __global__ void elemLPnts_nsgl(const float k, const int l, const triElem *elems,
         const int numNods, const int numCHIEF, cuFloatComplex *A, const int lda, 
         cuFloatComplex *B, const int numSrcs, const int ldb) {
     int idx = blockIdx.x*blockDim.x+threadIdx.x;
-    if(idx < numNods+numCHIEF && idx!=elems[l].nodes[0] && idx!=elems[l].nodes[1] && idx!=elems[l].nodes[2]) {
+    //printf("NumCHIEF: %d\n",numCHIEF);
+    if(idx<numNods+numCHIEF && idx!=elems[l].nodes[0] && idx!=elems[l].nodes[1] && idx!=elems[l].nodes[2]) {
         int i, j;
         cuFloatComplex hCoeffs[3], gCoeffs[3], bc, pCoeffs[3];
         float cCoeff;
         h_l_nsgl(k,pnts[idx],pnts[elems[l].nodes[0]],pnts[elems[l].nodes[1]],pnts[elems[l].nodes[2]],
-                hCoeffs,hCoeffs+1,hCoeffs+2);
+                &hCoeffs[0],&hCoeffs[1],&hCoeffs[2]);
         g_l_nsgl(k,pnts[idx],pnts[elems[l].nodes[0]],pnts[elems[l].nodes[1]],pnts[elems[l].nodes[2]],
-                gCoeffs,gCoeffs+1,gCoeffs+2);
+                &gCoeffs[0],&gCoeffs[1],&gCoeffs[2]);
         c_l_nsgl(k,pnts[idx],pnts[elems[l].nodes[0]],pnts[elems[l].nodes[1]],pnts[elems[l].nodes[2]],
                 &cCoeff); 
         
@@ -575,7 +576,10 @@ __global__ void elemLPnts_nsgl(const float k, const int l, const triElem *elems,
         for(i=0;i<3;i++) {
             A[IDXC0(idx,elems[l].nodes[i],lda)] = cuCaddf(A[IDXC0(idx,elems[l].nodes[i],lda)],pCoeffs[i]);
         }
-        A[IDXC0(idx,idx,lda)] = cuCsubf(A[IDXC0(idx,idx,lda)],make_cuFloatComplex(cCoeff,0));
+        if(idx<numNods) {
+            A[IDXC0(idx,idx,lda)] = cuCsubf(A[IDXC0(idx,idx,lda)],make_cuFloatComplex(cCoeff,0));
+        }
+        
         
         //Update the B matrix
         bc = cuCdivf(elems[l].bc[2],elems[l].bc[1]);
@@ -722,8 +726,6 @@ int genSystem(const float k, const triElem *elems, const int numElems,
         }
     }
     //printComplexMatrix(B,numNods+numCHIEF,numSrcs,numNods+numCHIEF);
-    
-    
     triElem *elems_d;
     CUDA_CALL(cudaMalloc(&elems_d,numElems*sizeof(triElem)));
     CUDA_CALL(cudaMemcpy(elems_d,elems,numElems*sizeof(triElem),cudaMemcpyHostToDevice));
@@ -744,11 +746,12 @@ int genSystem(const float k, const triElem *elems, const int numElems,
     
     for(l=0;l<numElems;l++) {
         //std::cout << "The current element: " << l << std::endl;
-        elemLPnts_nsgl<<<numBlocks,width>>>(k,l,elems_d,pnts_d,numNods,numCHIEF,
+        elemLPnts_nsgl<<<numBlocks,numCHIEF>>>(k,l,elems_d,pnts_d,numNods,numCHIEF,
                 A_d,lda,B_d,numSrcs,ldb);
+        
     }
     
-    std::cout << "completed kernel." << std::endl;
+    //std::cout << "completed kernel." << std::endl;
     //Update singular
     cuFloatComplex *hCoeffs_sgl1, *hCoeffs_sgl2, *hCoeffs_sgl3, *gCoeffs_sgl1, 
             *gCoeffs_sgl2, *gCoeffs_sgl3, *hCoeffs_sgl1_d, *hCoeffs_sgl2_d, 
@@ -852,6 +855,8 @@ int bemSystem(const mesh &m, const float k, const cartCoord *srcs, const int num
     int i;
     cartCoord *pnts_d;
     triElem *elems_d;
+    std::cout << "Number of nodes: " << m.numPnts << ", number of CHIEF: " << m.numCHIEF 
+            << std::endl;
     HOST_CALL(m.meshToGPU(&pnts_d,&elems_d));
     cartCoord *pnts = new cartCoord[m.numPnts+m.numCHIEF];
     for(i=0;i<m.numPnts;i++) {
@@ -1192,7 +1197,7 @@ int mesh::genCHIEF(const int num, const float threshold) {
     float randNums[3];
     int width = 32, numBlocks;
     float xRand, yRand, zRand;
-    unsigned long long seed = time(0);
+    long long seed = 0;
     curandGenerator_t gen;
     CURAND_CALL(curandCreateGeneratorHost(&gen,CURAND_RNG_PSEUDO_DEFAULT));
     cartCoord sp;
@@ -1222,13 +1227,11 @@ int mesh::genCHIEF(const int num, const float threshold) {
             numBlocks = (numPnts+width-1)/width;
             distPntPnts<<<numBlocks,width>>>(sp,pnts_d,numPnts,dists_d);
             CUDA_CALL(cudaMemcpy(dists,dists_d,numPnts*sizeof(float),cudaMemcpyDeviceToHost));
-            //printf("Minimum distance: %f\n",arrayMin(dists,numPnts));
-            
-            //cout << inObj(flags,numElems) << std::endl;
         } while((!inObj(flags,numElems))||(arrayMin(dists,numPnts)<threshold));
         chiefPnts[cnt].set(xRand,yRand,zRand);
         cnt++;
     }
+    
     delete[] dists;
     delete[] flags;
     CUDA_CALL(cudaFree(pnts_d));
@@ -1236,7 +1239,7 @@ int mesh::genCHIEF(const int num, const float threshold) {
     CUDA_CALL(cudaFree(flags_d));
     CUDA_CALL(cudaFree(dists_d));
     CURAND_CALL(curandDestroyGenerator(gen));
-    CUDA_CALL(cudaDeviceSynchronize());
+    
     return EXIT_SUCCESS;
 }
 
@@ -1266,7 +1269,7 @@ int mesh::chiefToGPU(cartCoord **pchiefPnts) {
 }
 
 int mesh::meshToGPU(cartCoord **pPnts_d, triElem **pElems_d) const {
-    if(numPnts==0 || numElems==0 || numCHIEF==0) {
+    if(numPnts==0 || numElems==0) {
         std::cout << "The mesh object is incomplete." << std::endl;
         return EXIT_FAILURE;
     } else {
@@ -1279,7 +1282,8 @@ int mesh::meshToGPU(cartCoord **pPnts_d, triElem **pElems_d) const {
             pnts_h[numPnts+i] = chiefPnts[i];
         }
         CUDA_CALL(cudaMalloc(pPnts_d,(numPnts+numCHIEF)*sizeof(cartCoord)));
-        CUDA_CALL(cudaMemcpy(*pPnts_d,pnts_h,(numPnts+numCHIEF)*sizeof(cartCoord),cudaMemcpyHostToDevice));
+        CUDA_CALL(cudaMemcpy(*pPnts_d,pnts_h,(numPnts+numCHIEF)*sizeof(cartCoord),
+                cudaMemcpyHostToDevice));
         
         CUDA_CALL(cudaMalloc(pElems_d,numElems*sizeof(triElem)));
         CUDA_CALL(cudaMemcpy(*pElems_d,elems,numElems*sizeof(triElem),cudaMemcpyHostToDevice));

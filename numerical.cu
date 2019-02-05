@@ -506,7 +506,7 @@ __host__ int lsqSolver(cuFloatComplex *A_h, const int m, const int n, const int 
         //printMatrix_complex(A_h,10,10,lda);
         //printf("Q_h: \n");
         //printMatrix_complex(Q_h,10,10,m);
-        HOST_CALL(QR_thin(A_h,m,n,lda,32,Q_h,m));
+        HOST_CALL(QR_thin(A_h,m,n,lda,256,Q_h,m));
 	CUDA_CALL(cudaDeviceSynchronize());
         //printf("A_h: \n");
         //printMatrix_complex(A_h,10,10,lda);
