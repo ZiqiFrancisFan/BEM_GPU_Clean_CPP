@@ -743,10 +743,12 @@ int genSystem(const float k, const triElem *elems, const int numElems,
     numBlocks = (numNods+numCHIEF+width-1)/width;
     
     for(l=0;l<numElems;l++) {
-        std::cout << "The current element: " << l << std::endl;
-        elemLPnts_nsgl<<<numBlocks,width>>>(k,l,elems_d,pnts_d,numNods,numCHIEF,A_d,lda,B_d,numSrcs,ldb);
+        //std::cout << "The current element: " << l << std::endl;
+        elemLPnts_nsgl<<<numBlocks,width>>>(k,l,elems_d,pnts_d,numNods,numCHIEF,
+                A_d,lda,B_d,numSrcs,ldb);
     }
     
+    std::cout << "completed kernel." << std::endl;
     //Update singular
     cuFloatComplex *hCoeffs_sgl1, *hCoeffs_sgl2, *hCoeffs_sgl3, *gCoeffs_sgl1, 
             *gCoeffs_sgl2, *gCoeffs_sgl3, *hCoeffs_sgl1_d, *hCoeffs_sgl2_d, 
@@ -764,7 +766,6 @@ int genSystem(const float k, const triElem *elems, const int numElems,
     cCoeffs_sgl1 = new float[numElems];
     cCoeffs_sgl2 = new float[numElems];
     cCoeffs_sgl3 = new float[numElems];
-    
     
     CUDA_CALL(cudaMalloc(&hCoeffs_sgl1_d,3*numElems*sizeof(cuFloatComplex)));
     CUDA_CALL(cudaMalloc(&hCoeffs_sgl2_d,3*numElems*sizeof(cuFloatComplex)));
@@ -861,7 +862,8 @@ int bemSystem(const mesh &m, const float k, const cartCoord *srcs, const int num
     }
     HOST_CALL(genSystem(k,m.elems,m.numElems,pnts,m.numPnts,m.numCHIEF,srcs,numSrcs,A,lda,B,ldb));
     delete[] pnts;
-    
+    CUDA_CALL(cudaFree(pnts_d));
+    CUDA_CALL(cudaFree(elems_d));
     return EXIT_SUCCESS;
 }
 
@@ -1217,7 +1219,6 @@ int mesh::genCHIEF(const int num, const float threshold) {
             numBlocks = (numElems+width-1)/width;
             rayTrnglsInt<<<numBlocks,width>>>(sp,dirCHIEF,pnts_d,elems_d,numElems,flags_d);
             CUDA_CALL(cudaMemcpy(flags,flags_d,numElems*sizeof(bool),cudaMemcpyDeviceToHost));
-            CUDA_CALL(cudaDeviceSynchronize());
             numBlocks = (numPnts+width-1)/width;
             distPntPnts<<<numBlocks,width>>>(sp,pnts_d,numPnts,dists_d);
             CUDA_CALL(cudaMemcpy(dists,dists_d,numPnts*sizeof(float),cudaMemcpyDeviceToHost));
@@ -1228,7 +1229,6 @@ int mesh::genCHIEF(const int num, const float threshold) {
         chiefPnts[cnt].set(xRand,yRand,zRand);
         cnt++;
     }
-    
     delete[] dists;
     delete[] flags;
     CUDA_CALL(cudaFree(pnts_d));
@@ -1236,7 +1236,7 @@ int mesh::genCHIEF(const int num, const float threshold) {
     CUDA_CALL(cudaFree(flags_d));
     CUDA_CALL(cudaFree(dists_d));
     CURAND_CALL(curandDestroyGenerator(gen));
-
+    CUDA_CALL(cudaDeviceSynchronize());
     return EXIT_SUCCESS;
 }
 

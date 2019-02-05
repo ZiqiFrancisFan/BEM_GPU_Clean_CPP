@@ -482,19 +482,18 @@ __host__ int QR_thin(cuFloatComplex *A_h, const int m, const int n, const int ld
     free(prod_Yv_h);
     free(v_h);
     free(prod_bvA_h);
-    cudaFree(A_d);
-    cudaFree(Q_d);
-    cudaFree(v_d);
-    cudaFree(V_d);
-    cudaFree(z_d);
-    cudaFree(Y_d);
-    cudaFree(W_d);
-    cudaFree(prod_QW);
-    cudaFree(prod_WA);
-    cudaFree(prod_Yv);
-    cudaFree(prod_bvA);
+    CUDA_CALL(cudaFree(A_d));
+    CUDA_CALL(cudaFree(Q_d));
+    CUDA_CALL(cudaFree(v_d));
+    CUDA_CALL(cudaFree(V_d));
+    CUDA_CALL(cudaFree(z_d));
+    CUDA_CALL(cudaFree(Y_d));
+    CUDA_CALL(cudaFree(W_d));
+    CUDA_CALL(cudaFree(prod_QW));
+    CUDA_CALL(cudaFree(prod_WA));
+    CUDA_CALL(cudaFree(prod_Yv));
+    CUDA_CALL(cudaFree(prod_bvA));
     CUBLAS_CALL(cublasDestroy(handle));
-    CUDA_CALL(cudaDeviceSynchronize());
     //CUDA_CALL(cudaDeviceReset());
     return EXIT_SUCCESS;
 }
@@ -502,8 +501,6 @@ __host__ int QR_thin(cuFloatComplex *A_h, const int m, const int n, const int ld
 __host__ int lsqSolver(cuFloatComplex *A_h, const int m, const int n, const int lda,
         cuFloatComplex *B_h, const int nrhs, const int ldb, cuFloatComplex *Q_h) {
     if(m>n) {
-        clock_t t;
-        t = clock();
         cuFloatComplex *temp;
         //printf("A_h: \n");
         //printMatrix_complex(A_h,10,10,lda);
@@ -540,8 +537,7 @@ __host__ int lsqSolver(cuFloatComplex *A_h, const int m, const int n, const int 
         CUDA_CALL(cudaFree(B_d));
         
         CUBLAS_CALL(cublasDestroy(cublasH));
-        t = clock()-t;
-        printf("elapsed %f seconds in the least square solver.\n",((float)t)/CLOCKS_PER_SEC);
+        
     }
     else {
         printf("Senario not included yet.");
