@@ -556,15 +556,16 @@ __global__ void elemLPnts_nsgl(const float k, const int l, const triElem *elems,
         const int numNods, const int numCHIEF, cuFloatComplex *A, const int lda, 
         cuFloatComplex *B, const int numSrcs, const int ldb) {
     int idx = blockIdx.x*blockDim.x+threadIdx.x;
-    //printf("NumCHIEF: %d\n",numCHIEF);
-    if(idx<numNods+numCHIEF && idx!=elems[l].nodes[0] && idx!=elems[l].nodes[1] && idx!=elems[l].nodes[2]) {
+    
+    if(idx<numNods+numCHIEF && idx!=elems[l].nodes[0] && idx!=elems[l].nodes[1] 
+            && idx!=elems[l].nodes[2]) {
         int i, j;
         cuFloatComplex hCoeffs[3], gCoeffs[3], bc, pCoeffs[3];
         float cCoeff;
         h_l_nsgl(k,pnts[idx],pnts[elems[l].nodes[0]],pnts[elems[l].nodes[1]],pnts[elems[l].nodes[2]],
-                &hCoeffs[0],&hCoeffs[1],&hCoeffs[2]);
+                hCoeffs,hCoeffs+1,hCoeffs+2);
         g_l_nsgl(k,pnts[idx],pnts[elems[l].nodes[0]],pnts[elems[l].nodes[1]],pnts[elems[l].nodes[2]],
-                &gCoeffs[0],&gCoeffs[1],&gCoeffs[2]);
+                gCoeffs,gCoeffs+1,gCoeffs+2);
         c_l_nsgl(k,pnts[idx],pnts[elems[l].nodes[0]],pnts[elems[l].nodes[1]],pnts[elems[l].nodes[2]],
                 &cCoeff); 
         
@@ -576,6 +577,8 @@ __global__ void elemLPnts_nsgl(const float k, const int l, const triElem *elems,
         for(i=0;i<3;i++) {
             A[IDXC0(idx,elems[l].nodes[i],lda)] = cuCaddf(A[IDXC0(idx,elems[l].nodes[i],lda)],pCoeffs[i]);
         }
+        
+        //Update from C coefficients
         if(idx<numNods) {
             A[IDXC0(idx,idx,lda)] = cuCsubf(A[IDXC0(idx,idx,lda)],make_cuFloatComplex(cCoeff,0));
         }
@@ -584,9 +587,12 @@ __global__ void elemLPnts_nsgl(const float k, const int l, const triElem *elems,
         bc = cuCdivf(elems[l].bc[2],elems[l].bc[1]);
         for(i=0;i<numSrcs;i++) {
             for(j=0;j<3;j++) {
-                B[IDXC0(idx,i,ldb)] = cuCsubf(B[IDXC0(idx,i,ldb)],cuCmulf(bc,gCoeffs[j]));
+                B[IDXC0(idx,i,ldb)] = cuCsubf(B[IDXC0(idx,i,ldb)],
+                        cuCmulf(bc,gCoeffs[j]));
+                
             }
-        }       
+        }
+        
     }
 }
 
@@ -689,6 +695,7 @@ void updateSystemCPU(const triElem *elems, const int numElems,
         
         
         bc = cuCdivf(elems[i].bc[2],elems[i].bc[1]);
+        //std::cout << "boundary condition: " << bc << std::endl;
         for(j=0;j<numSrcs;j++) {
             for(k=0;k<3;k++) {
                 B[IDXC0(elems[i].nodes[0],j,ldb)] = cuCsubf(B[IDXC0(elems[i].nodes[0],j,ldb)],
@@ -724,14 +731,17 @@ int genSystem(const float k, const triElem *elems, const int numElems,
             B[IDXC0(i,j,ldb)] = green2(k,srcs[j],pnts[i]);
         }
     }
-    //printComplexMatrix(B,numNods+numCHIEF,numSrcs,numNods+numCHIEF);
+    
+    //Move elements to GPU
     triElem *elems_d;
     CUDA_CALL(cudaMalloc(&elems_d,numElems*sizeof(triElem)));
     CUDA_CALL(cudaMemcpy(elems_d,elems,numElems*sizeof(triElem),cudaMemcpyHostToDevice));
     
+    //Move points to GPU
     cartCoord *pnts_d;
     CUDA_CALL(cudaMalloc(&pnts_d,(numNods+numCHIEF)*sizeof(cartCoord)));
     CUDA_CALL(cudaMemcpy(pnts_d,pnts,(numNods+numCHIEF)*sizeof(cartCoord),cudaMemcpyHostToDevice));
+    
     
     cuFloatComplex *A_d, *B_d;
     CUDA_CALL(cudaMalloc(&A_d,(numNods+numCHIEF)*numNods*sizeof(cuFloatComplex)));
@@ -742,13 +752,12 @@ int genSystem(const float k, const triElem *elems, const int numElems,
     
     int numBlocks, width = 32;
     numBlocks = (numNods+numCHIEF+width-1)/width;
-    
+    //std::cout << "Number of blocks: " << numBlocks << std::endl;
     for(l=0;l<numElems;l++) {
-        //std::cout << "The current element: " << l << std::endl;
-        elemLPnts_nsgl<<<numBlocks,numCHIEF>>>(k,l,elems_d,pnts_d,numNods,numCHIEF,
+        elemLPnts_nsgl<<<numBlocks,width>>>(k,l,elems_d,pnts_d,numNods,numCHIEF,
                 A_d,lda,B_d,numSrcs,ldb);
-        
     }
+    
     
     //std::cout << "completed kernel." << std::endl;
     //Update singular
@@ -785,7 +794,9 @@ int genSystem(const float k, const triElem *elems, const int numElems,
     elemsPnts_sgl<<<numBlocks,width>>>(k,elems_d,numElems,pnts_d,hCoeffs_sgl1_d,hCoeffs_sgl2_d,hCoeffs_sgl3_d,
             gCoeffs_sgl1_d,gCoeffs_sgl2_d,gCoeffs_sgl3_d,cCoeffs_sgl1_d,cCoeffs_sgl2_d,
             cCoeffs_sgl3_d);
-    //CUDA_CALL(cudaDeviceSynchronize());
+    
+    updateSystem_sgl<<<numBlocks,width>>>(elems_d,numElems,hCoeffs_sgl1_d,hCoeffs_sgl2_d,hCoeffs_sgl3_d,
+            gCoeffs_sgl1_d,gCoeffs_sgl2_d,gCoeffs_sgl3_d,A_d,lda);
     
     CUDA_CALL(cudaMemcpy(hCoeffs_sgl1,hCoeffs_sgl1_d,3*numElems*sizeof(cuFloatComplex),
             cudaMemcpyDeviceToHost));
@@ -808,11 +819,13 @@ int genSystem(const float k, const triElem *elems, const int numElems,
     CUDA_CALL(cudaMemcpy(cCoeffs_sgl3,cCoeffs_sgl3_d,numElems*sizeof(float),
             cudaMemcpyDeviceToHost));
     
-    updateSystem_sgl<<<numBlocks,width>>>(elems_d,numElems,hCoeffs_sgl1_d,hCoeffs_sgl2_d,hCoeffs_sgl3_d,
-            gCoeffs_sgl1_d,gCoeffs_sgl2_d,gCoeffs_sgl3_d,A_d,lda);
+    
     
     CUDA_CALL(cudaMemcpy(A,A_d,(numNods+numCHIEF)*numNods*sizeof(cuFloatComplex),cudaMemcpyDeviceToHost));
     CUDA_CALL(cudaMemcpy(B,B_d,(numNods+numCHIEF)*numSrcs*sizeof(cuFloatComplex),cudaMemcpyDeviceToHost));
+    //std::cout << "B: " << std::endl;
+    //printComplexMatrix(B,numNods+numCHIEF,numSrcs,numNods+numCHIEF);
+    
     
     updateSystemCPU(elems,numElems,hCoeffs_sgl1,hCoeffs_sgl2,hCoeffs_sgl3,
             gCoeffs_sgl1,gCoeffs_sgl2,gCoeffs_sgl3,cCoeffs_sgl1,cCoeffs_sgl2,cCoeffs_sgl3,
@@ -864,7 +877,8 @@ int bemSystem(const mesh &m, const float k, const cartCoord *srcs, const int num
     for(i=0;i<m.numCHIEF;i++) {
         pnts[m.numPnts+i] = m.chiefPnts[i];
     }
-    HOST_CALL(genSystem(k,m.elems,m.numElems,pnts,m.numPnts,m.numCHIEF,srcs,numSrcs,A,lda,B,ldb));
+    HOST_CALL(genSystem(k,m.elems,m.numElems,pnts,m.numPnts,m.numCHIEF,srcs,
+            numSrcs,A,lda,B,ldb));
     delete[] pnts;
     CUDA_CALL(cudaFree(pnts_d));
     CUDA_CALL(cudaFree(elems_d));
