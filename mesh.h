@@ -34,6 +34,8 @@ class cartCoord {
     
     friend __host__ __device__ cuFloatComplex green2(const float,const cartCoord,const cartCoord);
     
+    friend __host__ __device__ cuFloatComplex pntSrc(const float,const float,const cartCoord,const cartCoord);
+    
     friend __host__ __device__ float Psi_L(const cartCoord);
     
     friend __host__ __device__ cartCoord xiToElem(const cartCoord,const cartCoord,
@@ -98,7 +100,10 @@ __host__ __device__ cartCoord numMul(const float,const cartCoord&);
 
 __host__ __device__ float dotProd(const cartCoord&,const cartCoord&);
 
-__host__ __device__ cuFloatComplex green(const cartCoord&,const cartCoord&);
+__host__ __device__ cuFloatComplex green2(const float,const cartCoord,const cartCoord);
+
+__host__ __device__ cuFloatComplex pntSrc(const float k, const float q, const cartCoord x, 
+        const cartCoord y);
 
 __host__ __device__ float Psi_L(const cartCoord);
 

@@ -109,6 +109,12 @@ __host__ __device__ cuFloatComplex green2(const float k, const cartCoord x, cons
     return green(k,r);
 }
 
+__host__ __device__ cuFloatComplex pntSrc(const float k, const float q, 
+        const cartCoord x, const cartCoord y) {
+    cuFloatComplex temp = green2(k,x,y);
+    return make_cuFloatComplex(q*cuCrealf(temp),q*cuCimagf(temp));
+}
+
 __host__ __device__ float PsiL2(const cartCoord p1, const cartCoord p2) {
     cartCoord temp = p1-p2;
     return PsiL(temp.nrm2());
@@ -728,7 +734,7 @@ int genSystem(const float k, const triElem *elems, const int numElems,
     //Initialization of B
     for(i=0;i<numNods+numCHIEF;i++) {
         for(j=0;j<numSrcs;j++) {
-            B[IDXC0(i,j,ldb)] = green2(k,srcs[j],pnts[i]);
+            B[IDXC0(i,j,ldb)] = pntSrc(k,0,srcs[j],pnts[i]);
         }
     }
     
