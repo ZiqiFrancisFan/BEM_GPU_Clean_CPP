@@ -958,9 +958,48 @@ cuFloatComplex genExtPressure(const float k, const mesh &m, const cartCoord src,
     return extPressure;
 }
 
-__host__ __device__ float trnglArea(const cartCoord p1, const cartCoord p2) {
-    cartCoord temp = p1*p2;
+__host__ __device__ float trnglArea(const cartCoord p1, const cartCoord p2, 
+        const cartCoord p3) {
+    cartCoord v1 = p1-p3, v2 = p2-p3;
+    cartCoord temp = v1*v2;
     return temp.nrm2()/2.0;
+}
+
+__global__ void areaTrngls(const triElem *elems, const int numElems, const cartCoord *nods, 
+        float *area) {
+    int idx = blockIdx.x*blockDim.x+threadIdx.x;
+    if(idx<numElems) {
+        area[idx] = trnglArea(nods[elems[idx].nodes[0]],nods[elems[idx].nodes[1]],
+                nods[elems[idx].nodes[2]]);
+    }
+}
+
+float cmptSurfArea(const mesh &m) {
+    triElem *elems_d;
+    cudaMalloc(&elems_d,m.getNumElems()*sizeof(triElem));
+    cudaMemcpy(elems_d,m.elems,m.getNumElems()*sizeof(triElem),cudaMemcpyHostToDevice);
+    
+    cartCoord *nods_d;
+    cudaMalloc(&nods_d,m.getNumPnts()*sizeof(cartCoord));
+    cudaMemcpy(nods_d,m.pnts,m.getNumPnts()*sizeof(cartCoord),cudaMemcpyHostToDevice);
+    
+    float *area_d, *area = new float[m.getNumElems()];
+    cudaMalloc(&area_d,m.getNumElems()*sizeof(float));
+    int numBlocks, width = 32;
+    numBlocks = (m.getNumElems()+width-1)/width;
+    areaTrngls<<<numBlocks,width>>>(elems_d,m.getNumElems(),nods_d,area_d);
+    cudaMemcpy(area,area_d,m.getNumElems()*sizeof(float),cudaMemcpyDeviceToHost);
+    float totalArea = 0;
+    for(int i=0;i<m.getNumElems();i++) {
+        totalArea += area[i];
+    }
+    
+    cudaFree(area_d);
+    cudaFree(nods_d);
+    cudaFree(elems_d);
+    
+    free(area);
+    return totalArea;
 }
 
 __host__ __device__ cartCoord cartCoord::nrmlzd() {

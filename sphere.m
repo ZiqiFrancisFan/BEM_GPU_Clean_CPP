@@ -66,7 +66,7 @@ plot(ax,r,abs(pressure_nc),'-+g');
 hold(ax,'on');
 plot(ax,r,abs(pressure_c),'-or');
 legend(ax,'Ground truth','Simulation without CHIEF','Simulation with CHIEF');
-xlabel(ax,'Radius');
+xlabel(ax,'Radius (m)');
 ylabel(ax,'Magnitude');
 title(ax,'Magnitude response of a pulsating sphere');
 

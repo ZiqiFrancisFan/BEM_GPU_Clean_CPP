@@ -41,7 +41,7 @@ class cartCoord {
     friend __host__ __device__ cartCoord xiToElem(const cartCoord,const cartCoord,
         const cartCoord,const cartCoord2D);
     
-    friend __host__ __device__ float trnglArea(const cartCoord,const cartCoord);
+    friend __host__ __device__ float trnglArea(const cartCoord,const cartCoord,const cartCoord);
     
     friend __host__ __device__ cartCoord rayPlaneInt(const cartCoord,const cartCoord,
         const cartCoord,const cartCoord);
@@ -165,6 +165,9 @@ class triElem {
     friend __device__ cuFloatComplex pntElemOffset(const float k,const cartCoord x,const triElem elem,
         const cartCoord *pnts,const cuFloatComplex *surfPressure);
     
+    friend __global__ void areaTrngls(const triElem *elems, const int numElems, const cartCoord *nodes, 
+        float *area);
+    
     friend class mesh;
 private:
     int nodes[3];
@@ -190,6 +193,9 @@ class mesh {
     
     friend int bemSystem(const mesh &m, const float k, const cartCoord *srcs, const int numSrcs,
         cuFloatComplex *A, const int lda, cuFloatComplex *B, const int ldb);
+    
+    friend float cmptSurfArea(const mesh &m);
+    
     friend int Test();
     
 private:
@@ -225,6 +231,8 @@ public:
 std::ostream& operator<<(std::ostream&,const mesh&);
 
 __global__ void rayTrnglsInt(const cartCoord*,const triElem*,bool*);
+
+float cmptSurfArea(const mesh &m);
 
 class cartCoord2D {
     friend __host__ __device__ cartCoord2D numDvd(const cartCoord2D&,const float);

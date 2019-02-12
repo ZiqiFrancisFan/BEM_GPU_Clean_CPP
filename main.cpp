@@ -29,9 +29,9 @@ int main(int argc, char** argv) {
     float k = 2*PI*f/343.21;
     mesh m;
     size_t fr, ttl;
-    m.readObj("sphere.obj");
+    m.readObj("Head_20kHz.obj");
     m.findBB(0.0001);
-    m.genCHIEF(5,0.1);
+    m.genCHIEF(5,0.0001);
     std::cout << "CHIEF points generated." << std::endl;
     m.printCHIEF();
     gaussQuad gss(INTORDER);
@@ -41,13 +41,13 @@ int main(int argc, char** argv) {
     
     cartCoord src(1000000,1000000,1000000);
     int numSrcs = 1;
-    
+    std::cout << "Allocating memory for matrices A and B" << std::endl;
     cuFloatComplex *A = new cuFloatComplex[(m.getNumPnts()+m.getNumChief())
             *m.getNumPnts()*sizeof(cuFloatComplex)];
     
     cuFloatComplex *B = new cuFloatComplex[(m.getNumPnts()+m.getNumChief())*numSrcs
             *sizeof(cuFloatComplex)];
-    
+    std::cout << "Completed allocating memory." << std::endl;
     
     CUDA_CALL(cudaMemGetInfo(&fr,&ttl));
     printf("free GPU memory: %f,total: %f, before the program starts\n",
@@ -90,8 +90,9 @@ int main(int argc, char** argv) {
     for(int i=1;i<numLocs;i++) {
         pressure[i] = genExtPressure(k,m,src,cartCoord(-(1+step*i),0,0),B);
     }
-    printComplexMatrix(pressure,1,numLocs,1);
-    wrtCplxMat(pressure,1,numLocs,1,"sphere171Hz_CHIEF");
+    //printComplexMatrix(pressure,1,numLocs,1);
+    //wrtCplxMat(pressure,1,numLocs,1,"sphere171Hz_CHIEF");
+    std::cout << cmptSurfArea(m) << std::endl;
     
     delete[] A;
     delete[] B;
