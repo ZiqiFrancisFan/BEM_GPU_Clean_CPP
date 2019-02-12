@@ -44,7 +44,7 @@ class cartCoord {
     friend __host__ __device__ float trnglArea(const cartCoord,const cartCoord);
     
     friend __host__ __device__ cartCoord rayPlaneInt(const cartCoord,const cartCoord,
-    const cartCoord,const cartCoord);
+        const cartCoord,const cartCoord);
     
     friend __host__ __device__ bool rayTrnglInt(const cartCoord,const cartCoord,
     const cartCoord,const cartCoord,const cartCoord);
@@ -54,7 +54,7 @@ class cartCoord {
     friend __host__ __device__ float prpn2(const cartCoord,const cartCoord,const cartCoord);
     
     friend __global__ void rayTrnglsInt(const cartCoord,const cartCoord,
-    const cartCoord*,const triElem*,const int,bool*);
+        const cartCoord*,const triElem*,const int,bool*);
     
     friend __global__ void test(cartCoord *pnts, triElem *elems);
     
@@ -67,6 +67,9 @@ class cartCoord {
     friend __host__ __device__ float PsiL2(const cartCoord,const cartCoord);
     
     friend __host__ __device__ float pPsiLpn2(const cartCoord,const cartCoord,const cartCoord);
+    
+    friend __device__ cuFloatComplex pntElemOffset(const float k,const cartCoord x,const triElem elem,
+        const cartCoord *pnts,const cuFloatComplex *surfPressure);
     
     friend class mesh;
 private:
@@ -127,6 +130,9 @@ __host__ __device__ float PsiL2(const cartCoord,const cartCoord);
 
 __host__ __device__ float pPsiLpn2(const cartCoord,const cartCoord,const cartCoord);
 
+__device__ cuFloatComplex pntElemOffset(const float k,const cartCoord x,const triElem elem,
+        const cartCoord *pnts,const cuFloatComplex *surfPressure);
+
 //class triElem
 class triElem {
     friend std::ostream& operator<<(std::ostream&,const triElem&);
@@ -155,6 +161,9 @@ class triElem {
         cuFloatComplex *gCoeffs_sgl1, cuFloatComplex *gCoeffs_sgl2, 
         cuFloatComplex *gCoeffs_sgl3, float *cCoeffs_sgl1, float *cCoeffs_sgl2, float *cCoeffs_sgl3,
         cuFloatComplex *A, const int lda, cuFloatComplex *B, const int numSrcs, const int ldb);
+    
+    friend __device__ cuFloatComplex pntElemOffset(const float k,const cartCoord x,const triElem elem,
+        const cartCoord *pnts,const cuFloatComplex *surfPressure);
     
     friend class mesh;
 private:
@@ -202,15 +211,15 @@ public:
     int readObj(const char*);
     mesh& operator=(const mesh&);
     int findBB(const float);
-    int meshCloudToGPU(cartCoord**,triElem**);
+    int meshCloudToGPU(cartCoord**,triElem**) const;
     int genCHIEF(const int,const float);
     void printBB();
     void printCHIEF();
     int chiefToGPU(cartCoord**);
     int meshToGPU(cartCoord**,triElem**) const;
-    int getNumChief() {return numCHIEF;}
-    int getNumPnts() {return numPnts;}
-    int getNumElems() {return numElems;}
+    int getNumChief() const {return numCHIEF;}
+    int getNumPnts() const {return numPnts;}
+    int getNumElems() const {return numElems;}
 };
 
 std::ostream& operator<<(std::ostream&,const mesh&);
@@ -307,6 +316,10 @@ void updateSystemCPU(const triElem *elems, const int numElems, cuFloatComplex *h
         cuFloatComplex *A, const int lda, cuFloatComplex *B, 
         const int numSrcs, const int ldb);
 
+__device__ void g_l_nsgl(const float k, const cartCoord x, const cartCoord p1, 
+        const cartCoord p2, const cartCoord p3, cuFloatComplex *gCoeff1, 
+        cuFloatComplex *gCoeff2, cuFloatComplex *gCoeff3);
+
 __device__ void h_l_nsgl(const float k, const cartCoord x, const cartCoord p1, 
         const cartCoord p2, const cartCoord p3, cuFloatComplex *pCoeff1, 
         cuFloatComplex *pCoeff2, cuFloatComplex *pCoeff3);
@@ -346,5 +359,12 @@ __device__ void c_l_sgl2(const float k, const cartCoord x, const cartCoord p1,
 
 __device__ void c_l_sgl3(const float k, const cartCoord x, const cartCoord p1, 
         const cartCoord p2, const cartCoord p3, float *cCoeff);
+
+__global__ void pntElemsOffset(const float k, const cartCoord x, const triElem *elems, 
+        const int numElems, const cartCoord *pnts, const cuFloatComplex *surfPressure, 
+        cuFloatComplex *contribs);
+
+cuFloatComplex genExtPressure(const float k, const mesh &m, const cartCoord src,
+        const cartCoord x, const cuFloatComplex *surfPressure);
 #endif /* MESH_H */
 

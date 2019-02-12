@@ -101,6 +101,10 @@ while(0)
 #define EPS 0.00005
 #endif
 
+#ifndef STRENGTH
+#define STRENGTH 0
+#endif
+
 //air density and speed of sound
 extern __constant__ float density;
 

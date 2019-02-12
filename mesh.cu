@@ -734,7 +734,7 @@ int genSystem(const float k, const triElem *elems, const int numElems,
     //Initialization of B
     for(i=0;i<numNods+numCHIEF;i++) {
         for(j=0;j<numSrcs;j++) {
-            B[IDXC0(i,j,ldb)] = pntSrc(k,0,srcs[j],pnts[i]);
+            B[IDXC0(i,j,ldb)] = pntSrc(k,STRENGTH,srcs[j],pnts[i]);
         }
     }
     
@@ -889,6 +889,73 @@ int bemSystem(const mesh &m, const float k, const cartCoord *srcs, const int num
     CUDA_CALL(cudaFree(pnts_d));
     CUDA_CALL(cudaFree(elems_d));
     return EXIT_SUCCESS;
+}
+
+__device__ cuFloatComplex pntElemOffset(const float k, const cartCoord x, 
+        const triElem elem, const cartCoord *pnts, const cuFloatComplex *surfPressure) {
+    int i;
+    cuFloatComplex contrib = make_cuFloatComplex(0,0);
+    cuFloatComplex hCoeffs[3], gCoeffs[3], pCoeffs[3], bc;
+    g_l_nsgl(k,x,pnts[elem.nodes[0]],pnts[elem.nodes[1]],pnts[elem.nodes[2]],
+            gCoeffs,gCoeffs+1,gCoeffs+2);
+    h_l_nsgl(k,x,pnts[elem.nodes[0]],pnts[elem.nodes[1]],pnts[elem.nodes[2]],
+            hCoeffs,hCoeffs+1,hCoeffs+2);
+    bc = cuCdivf(elem.bc[0],elem.bc[1]);
+    for(i=0;i<3;i++) {
+        pCoeffs[i] = cuCsubf(hCoeffs[i],cuCmulf(bc,gCoeffs[i]));
+        contrib = cuCaddf(contrib,cuCmulf(pCoeffs[i],surfPressure[elem.nodes[i]]));
+    }
+    bc = cuCdivf(elem.bc[2],elem.bc[1]);
+    for(i=0;i<3;i++) {
+        contrib = cuCaddf(contrib,cuCmulf(bc,gCoeffs[i]));
+    }
+    return contrib;
+}
+
+__global__ void pntElemsOffset(const float k, const cartCoord x, const triElem *elems, 
+        const int numElems, const cartCoord *pnts, const cuFloatComplex *surfPressure, 
+        cuFloatComplex *contribs) {
+    int idx = blockIdx.x*blockDim.x+threadIdx.x;
+    if(idx < numElems) {
+        contribs[idx] = pntElemOffset(k,x,elems[idx],pnts,surfPressure);
+    }
+}
+
+cuFloatComplex genExtPressure(const float k, const mesh &m, const cartCoord src,
+        const cartCoord x, const cuFloatComplex *surfPressure) {
+    cuFloatComplex *surfPressure_d;
+    cudaMalloc(&surfPressure_d,m.getNumPnts()*sizeof(cuFloatComplex));
+    cudaMemcpy(surfPressure_d,surfPressure,m.getNumPnts()*sizeof(cuFloatComplex),
+            cudaMemcpyHostToDevice);
+    
+    cartCoord *pnts_d;
+    triElem *elems_d;
+    m.meshCloudToGPU(&pnts_d,&elems_d);
+    
+    cuFloatComplex *contribs = new cuFloatComplex[m.getNumElems()], *contribs_d;
+    cudaMalloc(&contribs_d,m.getNumElems()*sizeof(triElem));
+    
+    int numBlocks, width = 32;
+    numBlocks = (m.getNumElems()+width-1)/width;
+    
+    pntElemsOffset<<<numBlocks,width>>>(k,x,elems_d,m.getNumElems(),pnts_d,surfPressure_d,
+            contribs_d);
+    cudaMemcpy(contribs,contribs_d,m.getNumElems()*sizeof(cuFloatComplex),
+            cudaMemcpyDeviceToHost);
+    
+    cuFloatComplex extPressure = pntSrc(k,STRENGTH,src,x);
+    int i;
+    for(i=0;i<m.getNumElems();i++) {
+        extPressure = cuCsubf(extPressure,contribs[i]);
+    }
+    
+    cudaFree(contribs_d);
+    cudaFree(elems_d);
+    cudaFree(pnts_d);
+    cudaFree(surfPressure_d);
+    
+    free(contribs);
+    return extPressure;
 }
 
 __host__ __device__ float trnglArea(const cartCoord p1, const cartCoord p2) {
@@ -1268,7 +1335,7 @@ void mesh::printCHIEF() {
     }
 }
 
-int mesh::meshCloudToGPU(cartCoord **pPnts_d,triElem **pElems_d) {
+int mesh::meshCloudToGPU(cartCoord **pPnts_d,triElem **pElems_d) const {
     if(pnts!=NULL && elems!=NULL) {
         CUDA_CALL(cudaMalloc(pPnts_d,numPnts*sizeof(cartCoord)));
         CUDA_CALL(cudaMemcpy(*pPnts_d,pnts,numPnts*sizeof(cartCoord),cudaMemcpyHostToDevice));

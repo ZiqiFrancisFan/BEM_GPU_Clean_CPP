@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
     float k = 2*PI*f/343.21;
     mesh m;
     size_t fr, ttl;
-    m.readObj("sphere1.obj");
+    m.readObj("sphere.obj");
     m.findBB(0.0001);
     m.genCHIEF(5,0.1);
     std::cout << "CHIEF points generated." << std::endl;
@@ -65,12 +65,23 @@ int main(int argc, char** argv) {
     HOST_CALL(lsqSolver(A,m.getNumPnts()+m.getNumChief(),m.getNumPnts(),
             m.getNumPnts()+m.getNumChief(),B,numSrcs,m.getNumPnts()+m.getNumChief(),Q));
     t = clock()-t;
-    printComplexMatrix(B,m.getNumPnts(),numSrcs,m.getNumPnts()+m.getNumChief());
+    //printComplexMatrix(B,m.getNumPnts(),numSrcs,m.getNumPnts()+m.getNumChief());
     printf("Elapsed %f seconds in solution of system.\n",((float)t)/CLOCKS_PER_SEC);
+    
+    float radius = 3;
+    float step = 0.2;
+    int numLocs = (radius-1)/step+1;
+    cuFloatComplex *pressure = new cuFloatComplex[numLocs];
+    pressure[0] = B[0];
+    for(int i=1;i<numLocs;i++) {
+        pressure[i] = genExtPressure(k,m,src,cartCoord(1+step*i,0,0),B);
+    }
+    printComplexMatrix(pressure,1,numLocs,1);
     
     delete[] A;
     delete[] B;
     delete[] Q;
+    delete[] pressure;
     return 0;
 }
 
