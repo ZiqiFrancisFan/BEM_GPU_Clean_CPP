@@ -166,6 +166,7 @@ __host__ int lsqSolver(cuFloatComplex *A_h,const int m,const int n,const int lda
         cuFloatComplex *B_h,const int nrhs,const int ldb, cuFloatComplex *Q_h);
 
 
-
+int wrtCplxMat(const cuFloatComplex *mat,const int numRows,const int numCols,const int ldm,
+        const char *file);
 #endif /* NUMERICAL_H */
 

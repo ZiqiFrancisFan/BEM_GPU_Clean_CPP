@@ -1,5 +1,54 @@
 clear; close all; clc;
 %%
 a = 1;
-r = 1:0.1:3;
-rho = 
+r = 1:0.2:3;
+rho = 1.2041;
+c = 343.21;
+
+f = 171.5;
+k = 2*pi*f/c;
+
+p = a^2./r*i*rho*2*pi*f/(1+i*k*a).*exp(-i*k*(r-a));
+
+fileID = fopen('sphere171Hz','r');
+if(fileID == -1)
+    printf('Failed to open file HRTFs');
+    return;
+end
+format = '';
+s = '(%f,%f) ';
+for i=1:length(r)
+    format = [format,s];
+end
+pressure = zeros(size(r,1),size(r,2));
+for i=1:size(r,1)
+    tline = fgetl(fileID);
+    a = sscanf(tline,format);
+    for j=1:size(r,2)
+        x = a(2*j-1);
+        y = a(2*j);
+        pressure(i,j) = x+complex(0,1)*y;
+    end
+end
+fclose(fileID);
+fig = figure;
+ax = axes(fig);
+plot(ax,r,abs(p),'*b');
+hold(ax,'on');
+plot(ax,r,abs(pressure),'or');
+legend(ax,'Ground truth','Simulation with 5 CHIEF points');
+xlabel(ax,'Radius');
+ylabel(ax,'Magnitude');
+title(ax,'Magnitude response of a pulsating sphere');
+
+fig = figure;
+ax = axes(fig);
+plot(ax,r,angle(p)*180/pi,'*b');
+hold(ax,'on');
+plot(ax,r,angle(pressure)*180/pi,'or');
+legend(ax,'Ground truth','Simulation with 5 CHIEF points');
+xlabel(ax,'Radius');
+ylabel(ax,'Magnitude');
+title(ax,'Phase response of a pulsating sphere');
+
+

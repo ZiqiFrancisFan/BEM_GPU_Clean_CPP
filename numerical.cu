@@ -548,5 +548,29 @@ __host__ int lsqSolver(cuFloatComplex *A_h, const int m, const int n, const int 
     return EXIT_SUCCESS;
 }
 
+int wrtCplxMat(const cuFloatComplex *mat, const int numRows, const int numCols,
+        const int ldm, const char *fName) {
+    FILE *file = fopen(fName,"w");
+    if(file == NULL) {
+        std::cout << "Failed to open file." << std::endl;
+        return EXIT_FAILURE;
+    } else {
+        int i, j, status;
+        for(i=0;i<numRows;i++) {
+            for(j=0;j<numCols;j++) {
+                status = fprintf(file,"(%f,%f) ",cuCrealf(mat[IDXC0(i,j,ldm)]),
+                        cuCimagf(mat[IDXC0(i,j,ldm)]));
+                if (status < 0) {
+                    std::cout << "Failed to write!" << std::endl;
+                    return EXIT_FAILURE;
+                }
+            }
+            fprintf(file,"\n");
+        }
+    }
+    fclose(file);
+    return EXIT_SUCCESS;
+}
+
 
 

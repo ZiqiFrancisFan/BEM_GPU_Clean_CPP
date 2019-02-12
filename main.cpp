@@ -15,6 +15,7 @@
 #include <time.h>
 #include "numerical.h"
 #include "mesh.h"
+#include "GMRES.h"
 #include <cuda.h>
 #include "device_launch_parameters.h"
 
@@ -59,29 +60,44 @@ int main(int argc, char** argv) {
     //printComplexMatrix(A,m.getNumPnts()+m.getNumChief(),m.getNumPnts(),m.getNumPnts()+m.getNumChief());
     printf("Elapsed %f seconds in generation of system.\n",((float)t)/CLOCKS_PER_SEC);
     //CUDA_CALL(cudaDeviceSynchronize());
+    
     cuFloatComplex *Q = new cuFloatComplex[(m.getNumPnts()+m.getNumChief())
             *(m.getNumPnts()+m.getNumChief())];
     t = clock();
     HOST_CALL(lsqSolver(A,m.getNumPnts()+m.getNumChief(),m.getNumPnts(),
             m.getNumPnts()+m.getNumChief(),B,numSrcs,m.getNumPnts()+m.getNumChief(),Q));
     t = clock()-t;
-    //printComplexMatrix(B,m.getNumPnts(),numSrcs,m.getNumPnts()+m.getNumChief());
     printf("Elapsed %f seconds in solution of system.\n",((float)t)/CLOCKS_PER_SEC);
-    
     float radius = 3;
     float step = 0.2;
     int numLocs = (radius-1)/step+1;
     cuFloatComplex *pressure = new cuFloatComplex[numLocs];
     pressure[0] = B[0];
+    
+    
+    //printComplexMatrix(B,m.getNumPnts(),numSrcs,m.getNumPnts()+m.getNumChief());
+    
+    /*
+    cuFloatComplex *x = new cuFloatComplex[m.getNumPnts()];
+    GMRES(A,B,m.getNumPnts(),m.getNumPnts(),0,x);
+    printComplexMatrix(x,m.getNumPnts(),1,m.getNumPnts());
+    float radius = 3;
+    float step = 0.2;
+    int numLocs = (radius-1)/step+1;
+    cuFloatComplex *pressure = new cuFloatComplex[numLocs];
+    pressure[0] = x[0];
+     */ 
     for(int i=1;i<numLocs;i++) {
-        pressure[i] = genExtPressure(k,m,src,cartCoord(1+step*i,0,0),B);
+        pressure[i] = genExtPressure(k,m,src,cartCoord(-(1+step*i),0,0),B);
     }
     printComplexMatrix(pressure,1,numLocs,1);
+    wrtCplxMat(pressure,1,numLocs,1,"sphere171Hz_CHIEF");
     
     delete[] A;
     delete[] B;
-    delete[] Q;
+    //delete[] Q;
     delete[] pressure;
+    //delete[] x;
     return 0;
 }
 
