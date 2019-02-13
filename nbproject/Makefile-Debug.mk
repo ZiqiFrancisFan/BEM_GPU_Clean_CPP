@@ -36,6 +36,7 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 # Object Files
 OBJECTFILES= \
 	${OBJECTDIR}/GMRES.o \
+	${OBJECTDIR}/atomicFuncs.o \
 	${OBJECTDIR}/main.o \
 	${OBJECTDIR}/mesh.o \
 	${OBJECTDIR}/numerical.o
@@ -69,6 +70,11 @@ ${OBJECTDIR}/GMRES.o: GMRES.cu
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/GMRES.o GMRES.cu
+
+${OBJECTDIR}/atomicFuncs.o: atomicFuncs.cu
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/atomicFuncs.o atomicFuncs.cu
 
 ${OBJECTDIR}/main.o: main.cpp
 	${MKDIR} -p ${OBJECTDIR}
