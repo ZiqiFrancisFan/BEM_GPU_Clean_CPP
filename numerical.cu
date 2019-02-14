@@ -23,21 +23,7 @@ __global__ void test(cartCoord *pnts, triElem *elems) {
 }
 
 int Test() {
-    cuFloatComplex *temp_h = new cuFloatComplex[5], *temp_d, *sum_d, sum = make_cuFloatComplex(0,0);
-    for(int i=0;i<5;i++) {
-        temp_h[i] = make_cuFloatComplex(i,i);
-    }
-    CUDA_CALL(cudaMalloc(&temp_d,5*sizeof(cuFloatComplex)));
-    CUDA_CALL(cudaMemcpy(temp_d,temp_h,5*sizeof(cuFloatComplex),cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMalloc(&sum_d,sizeof(cuFloatComplex)));
-    CUDA_CALL(cudaMemcpy(sum_d,&sum,sizeof(cuFloatComplex),cudaMemcpyHostToDevice));
-    int width = 32, numBlocks = (5+width-1)/width;
-    floatComplexAdd<<<numBlocks,width>>>(sum_d,temp_d,5);
-    CUDA_CALL(cudaMemcpy(&sum,sum_d,sizeof(cuFloatComplex),cudaMemcpyDeviceToHost));
-    std::cout << "sum: " << sum << std::endl;
-    CUDA_CALL(cudaFree(temp_d));
-    CUDA_CALL(cudaFree(sum_d));
-    free(temp_h);
+    
     return EXIT_SUCCESS;
 }
 

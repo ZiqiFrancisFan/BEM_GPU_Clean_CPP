@@ -13,6 +13,7 @@ __global__ void add(float *loc, float *temp, const int num) {
     }
 }
 
+/*
 __device__ void atomicFloatComplexAdd(cuFloatComplex *a, cuFloatComplex b) {
     float *x = &(a->x);
     float *y = &(a->y);
@@ -57,7 +58,7 @@ __global__ void floatComplexAdd(cuFloatComplex *a, cuFloatComplex *b, const int 
         atomicFloatComplexAdd(a,b[idx]);
     }
 }
-
+*/
 __global__ void atomicPntsElems_nsgl(const float k, const cartCoord *pnts, const int numNods, 
         const int idxPntStart, const int idxPntEnd, const triElem *elems, const int numElems, 
         cuFloatComplex *A, const int lda, cuFloatComplex *B, const int numSrcs, const int ldb) {
@@ -67,10 +68,10 @@ __global__ void atomicPntsElems_nsgl(const float k, const cartCoord *pnts, const
     if(xIdx>=idxPntStart && xIdx<=idxPntEnd && yIdx<numElems && xIdx!=elems[yIdx].nodes[0] 
             && xIdx!=elems[yIdx].nodes[1] && xIdx!=elems[yIdx].nodes[2]) {
         int i, j;
-        cuFloatComplex hCoeffs[3], gCoeffs[3], bc, pCoeffs[3];
+        cuFloatComplex hCoeffs[3], gCoeffs[3], bc, pCoeffs[3], temp;
         float cCoeff;
-        h_l_nsgl(k,pnts[xIdx],pnts[elems[yIdx].nodes[0]],pnts[elems[yIdx].nodes[1]],
-                pnts[elems[yIdx].nodes[2]],hCoeffs,hCoeffs+1,hCoeffs+2);
+        h_l_nsgl(k,pnts[xIdx],pnts[elems[yIdx].nodes[0]],pnts[elems[yIdx].nodes[1]],pnts[elems[yIdx].nodes[2]],
+                hCoeffs,hCoeffs+1,hCoeffs+2);
         
         g_l_nsgl(k,pnts[xIdx],pnts[elems[yIdx].nodes[0]],pnts[elems[yIdx].nodes[1]],pnts[elems[yIdx].nodes[2]],
                 gCoeffs,gCoeffs+1,gCoeffs+2);
@@ -85,12 +86,15 @@ __global__ void atomicPntsElems_nsgl(const float k, const cartCoord *pnts, const
         }
         
         for(i=0;i<3;i++) {
-            atomicFloatComplexAdd(&A[IDXC0(xIdx,elems[yIdx].nodes[i],lda)],pCoeffs[i]);
+            //atomicFloatComplexAdd(&A[IDXC0(xIdx,elems[yIdx].nodes[i],lda)],pCoeffs[i]);
+            atomicAdd(&A[IDXC0(xIdx,elems[yIdx].nodes[i],lda)].x,cuCrealf(pCoeffs[i]));
+            atomicAdd(&A[IDXC0(xIdx,elems[yIdx].nodes[i],lda)].y,cuCimagf(pCoeffs[i]));
         }
         
         //Update from C coefficients
         if(xIdx<numNods) {
-            atomicFloatComplexSub(&A[IDXC0(xIdx,xIdx,lda)],make_cuFloatComplex(cCoeff,0));
+            //atomicFloatComplexSub(&A[IDXC0(xIdx,xIdx,lda)],make_cuFloatComplex(cCoeff,0));
+            atomicAdd(&A[IDXC0(xIdx,xIdx,lda)].x,-cCoeff);
         }
         
         //Update the B matrix
@@ -99,7 +103,10 @@ __global__ void atomicPntsElems_nsgl(const float k, const cartCoord *pnts, const
         //printComplexMatrix(&bc,1,1,1);
         for(i=0;i<numSrcs;i++) {
             for(j=0;j<3;j++) {
-                atomicFloatComplexSub(&B[IDXC0(xIdx,i,ldb)],cuCmulf(bc,gCoeffs[j]));
+                //atomicFloatComplexSub(&B[IDXC0(xIdx,i,ldb)],cuCmulf(bc,gCoeffs[j]));
+                temp = cuCmulf(bc,gCoeffs[j]);
+                atomicAdd(&B[IDXC0(xIdx,i,ldb)].x,-cuCrealf(temp));
+                atomicAdd(&B[IDXC0(xIdx,i,ldb)].y,-cuCimagf(temp));
             }
         }
     }
@@ -113,7 +120,7 @@ __global__ void atomicPntsElems_sgl(const float k, const cartCoord *pnts, const 
         int i, j;
         cuFloatComplex hCoeffs_sgl1[3], hCoeffs_sgl2[3], hCoeffs_sgl3[3], 
                 gCoeffs_sgl1[3], gCoeffs_sgl2[3], gCoeffs_sgl3[3], pCoeffs_sgl1[3], 
-                pCoeffs_sgl2[3], pCoeffs_sgl3[3], bc;
+                pCoeffs_sgl2[3], pCoeffs_sgl3[3], bc, temp;
         float cCoeff_sgl1, cCoeff_sgl2, cCoeff_sgl3;
         // Compute h and g coefficients
         h_l_sgl1(k,pnts[elems[idx].nodes[0]],pnts[elems[idx].nodes[0]],pnts[elems[idx].nodes[1]],
@@ -147,31 +154,58 @@ __global__ void atomicPntsElems_sgl(const float k, const cartCoord *pnts, const 
         
         //Update matrix A using pCoeffs
         for(j=0;j<3;j++) {
-            atomicFloatComplexAdd(&A[IDXC0(elems[idx].nodes[0],elems[idx].nodes[j],lda)],
-                    pCoeffs_sgl1[j]);
-            atomicFloatComplexAdd(&A[IDXC0(elems[idx].nodes[1],elems[idx].nodes[j],lda)],
-                    pCoeffs_sgl2[j]);
-            atomicFloatComplexAdd(&A[IDXC0(elems[idx].nodes[2],elems[idx].nodes[j],lda)],
-                    pCoeffs_sgl3[j]);
+            //atomicFloatComplexAdd(&A[IDXC0(elems[idx].nodes[0],elems[idx].nodes[j],lda)],
+            //        pCoeffs_sgl1[j]);
+            atomicAdd(&A[IDXC0(elems[idx].nodes[0],elems[idx].nodes[j],lda)].x,
+                    cuCrealf(pCoeffs_sgl1[j]));
+            atomicAdd(&A[IDXC0(elems[idx].nodes[0],elems[idx].nodes[j],lda)].y,
+                    cuCimagf(pCoeffs_sgl1[j]));
+            //atomicFloatComplexAdd(&A[IDXC0(elems[idx].nodes[1],elems[idx].nodes[j],lda)],
+            //        pCoeffs_sgl2[j]);
+            atomicAdd(&A[IDXC0(elems[idx].nodes[1],elems[idx].nodes[j],lda)].x,
+                    cuCrealf(pCoeffs_sgl2[j]));
+            atomicAdd(&A[IDXC0(elems[idx].nodes[1],elems[idx].nodes[j],lda)].y,
+                    cuCimagf(pCoeffs_sgl2[j]));
+            //atomicFloatComplexAdd(&A[IDXC0(elems[idx].nodes[2],elems[idx].nodes[j],lda)],
+            //        pCoeffs_sgl3[j]);
+            atomicAdd(&A[IDXC0(elems[idx].nodes[2],elems[idx].nodes[j],lda)].x,
+                    cuCrealf(pCoeffs_sgl3[j]));
+            atomicAdd(&A[IDXC0(elems[idx].nodes[2],elems[idx].nodes[j],lda)].y,
+                    cuCimagf(pCoeffs_sgl3[j]));
         }
         
-        atomicFloatComplexSub(&A[IDXC0(elems[idx].nodes[0],elems[idx].nodes[0],lda)],
-                make_cuFloatComplex(cCoeff_sgl1,0));
-        atomicFloatComplexSub(&A[IDXC0(elems[idx].nodes[1],elems[idx].nodes[1],lda)],
-                make_cuFloatComplex(cCoeff_sgl2,0));
-        atomicFloatComplexSub(&A[IDXC0(elems[idx].nodes[2],elems[idx].nodes[2],lda)],
-                make_cuFloatComplex(cCoeff_sgl3,0));
+        //atomicFloatComplexSub(&A[IDXC0(elems[idx].nodes[0],elems[idx].nodes[0],lda)],
+        //        make_cuFloatComplex(cCoeff_sgl1,0));
+        atomicAdd(&A[IDXC0(elems[idx].nodes[0],elems[idx].nodes[0],lda)].x,
+                -cCoeff_sgl1);
+        //atomicFloatComplexSub(&A[IDXC0(elems[idx].nodes[1],elems[idx].nodes[1],lda)],
+        //        make_cuFloatComplex(cCoeff_sgl2,0));
+        atomicAdd(&A[IDXC0(elems[idx].nodes[1],elems[idx].nodes[1],lda)].x,
+                -cCoeff_sgl2);
+        //atomicFloatComplexSub(&A[IDXC0(elems[idx].nodes[2],elems[idx].nodes[2],lda)],
+        //        make_cuFloatComplex(cCoeff_sgl3,0));
+        atomicAdd(&A[IDXC0(elems[idx].nodes[2],elems[idx].nodes[2],lda)].x,
+                -cCoeff_sgl3);
         
         //Update matrix B using g Coefficients
         bc = cuCdivf(elems[idx].bc[2],elems[idx].bc[1]);
         for(i=0;i<numSrcs;i++) {
             for(j=0;j<3;j++) {
-                atomicFloatComplexSub(&B[IDXC0(elems[idx].nodes[0],i,ldb)],
-                        cuCmulf(bc,gCoeffs_sgl1[j]));
-                atomicFloatComplexSub(&B[IDXC0(elems[idx].nodes[1],i,ldb)],
-                        cuCmulf(bc,gCoeffs_sgl2[j]));
-                atomicFloatComplexSub(&B[IDXC0(elems[idx].nodes[2],i,ldb)],
-                        cuCmulf(bc,gCoeffs_sgl3[j]));
+                //atomicFloatComplexSub(&B[IDXC0(elems[idx].nodes[0],i,ldb)],
+                //        cuCmulf(bc,gCoeffs_sgl1[j]));
+                temp = cuCmulf(bc,gCoeffs_sgl1[j]);
+                atomicAdd(&B[IDXC0(elems[idx].nodes[0],i,ldb)].x,-cuCrealf(temp));
+                atomicAdd(&B[IDXC0(elems[idx].nodes[0],i,ldb)].y,-cuCimagf(temp));
+                //atomicFloatComplexSub(&B[IDXC0(elems[idx].nodes[1],i,ldb)],
+                //        cuCmulf(bc,gCoeffs_sgl2[j]));
+                temp = cuCmulf(bc,gCoeffs_sgl2[j]);
+                atomicAdd(&B[IDXC0(elems[idx].nodes[1],i,ldb)].x,-cuCrealf(temp));
+                atomicAdd(&B[IDXC0(elems[idx].nodes[1],i,ldb)].y,-cuCimagf(temp));
+                //atomicFloatComplexSub(&B[IDXC0(elems[idx].nodes[2],i,ldb)],
+                //        cuCmulf(bc,gCoeffs_sgl3[j]));
+                temp = cuCmulf(bc,gCoeffs_sgl3[j]);
+                atomicAdd(&B[IDXC0(elems[idx].nodes[2],i,ldb)].x,-cuCrealf(temp));
+                atomicAdd(&B[IDXC0(elems[idx].nodes[2],i,ldb)].y,-cuCimagf(temp));
             }
         }
     }
@@ -233,8 +267,10 @@ int atomicGenSystem(const float k, const triElem *elems, const int numElems,
     blockLayout.y = yWidth;
     
     //std::cout << "Number of blocks: " << numBlocks << std::endl;
+    
     atomicPntsElems_nsgl<<<gridLayout,blockLayout>>>(k,pnts_d,numNods,0,numNods+numCHIEF-1,
             elems_d,numElems,A_d,lda,B_d,numSrcs,ldb);
+      
     CUDA_CALL(cudaMemcpy(A,A_d,(numNods+numCHIEF)*numNods*sizeof(cuFloatComplex),cudaMemcpyDeviceToHost));
     /*
     printf("A: \n");

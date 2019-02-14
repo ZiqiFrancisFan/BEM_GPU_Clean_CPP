@@ -22,13 +22,13 @@
 using namespace std;
 
 int main(int argc, char** argv) {
-    float f = 54.59;
+    float f = 171.5;
     float k = 2*PI*f/343.21;
     mesh m;
     size_t fr, ttl;
-    m.readObj("KEMARTORSO_12000Hz.obj");
+    m.readObj("sphere1.obj");
     m.findBB(0.0001);
-    m.genCHIEF(1,0.001);
+    m.genCHIEF(20,0.001);
     std::cout << "CHIEF points generated." << std::endl;
     m.printCHIEF();
     gaussQuad gss(INTORDER);
@@ -54,7 +54,9 @@ int main(int argc, char** argv) {
     HOST_CALL(bemSystem(m,k,&src,numSrcs,A,(m.getNumPnts()+m.getNumChief()),B,
             (m.getNumPnts()+m.getNumChief())));
     t = clock()-t;
+    std::cout << "A: " << std::endl;
     //printComplexMatrix(A,m.getNumPnts()+m.getNumChief(),m.getNumPnts(),m.getNumPnts()+m.getNumChief());
+    std::cout << "B: " << std::endl;
     //printComplexMatrix(B,m.getNumPnts()+m.getNumChief(),numSrcs,m.getNumPnts()+m.getNumChief());
     printf("Elapsed %f seconds in generation of system.\n",((float)t)/CLOCKS_PER_SEC);
     //CUDA_CALL(cudaDeviceSynchronize());
@@ -66,7 +68,7 @@ int main(int argc, char** argv) {
             m.getNumPnts()+m.getNumChief(),B,numSrcs,m.getNumPnts()+m.getNumChief(),Q));
     t = clock()-t;
     printf("Elapsed %f seconds in solution of system.\n",((float)t)/CLOCKS_PER_SEC);
-    printComplexMatrix(B,m.getNumPnts(),numSrcs,m.getNumPnts()+m.getNumChief());
+    printComplexMatrix(B,10,numSrcs,m.getNumPnts()+m.getNumChief());
     /*
     float radius = 3;
     float step = 0.2;
