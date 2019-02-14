@@ -168,6 +168,14 @@ class triElem {
     friend __global__ void areaTrngls(const triElem *elems, const int numElems, const cartCoord *nodes, 
         float *area);
     
+    friend __global__ void atomicPntsElems_nsgl(const float k, const cartCoord *pnts, const int numNods, 
+        const int idxPntStart, const int idxPntEnd, const triElem *elems, const int numElems, 
+        cuFloatComplex *A, const int lda, cuFloatComplex *B, const int numSrcs, const int ldb);
+    
+    friend __global__ void atomicPntsElems_sgl(const float k, const cartCoord *pnts, const triElem *elems, 
+        const int numElems, cuFloatComplex *A, const int lda, cuFloatComplex *B, 
+        const int numSrcs, const int ldb);
+    
     friend class mesh;
 private:
     int nodes[3];

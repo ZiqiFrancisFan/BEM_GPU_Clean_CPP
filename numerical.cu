@@ -5,6 +5,7 @@
  */
 #include "numerical.h"
 #include "mesh.h"
+#include "atomicFuncs.h"
 
 //air density and speed of sound
 __constant__ float density = 1.2041;
@@ -22,27 +23,21 @@ __global__ void test(cartCoord *pnts, triElem *elems) {
 }
 
 int Test() {
-    mesh m;
-    m.readObj("sphere.obj");
-    bool *flags_d;
-    CUDA_CALL(cudaMalloc(&flags_d,m.numElems*sizeof(bool)));
-    float *dists = new float[m.numPnts];
-    bool *flags = new bool[m.numElems];
-    cartCoord *pnts_d;
-    triElem *elems_d;
-    m.meshCloudToGPU(&pnts_d,&elems_d);
-    cartCoord sp(0,0,0);
-    int width = 32;
-    int numBlocks = (m.numElems+width-1)/width;
-    cartCoord dirCHIEF(1.1,1,1);
-    rayTrnglsInt<<<numBlocks,width>>>(sp,dirCHIEF,pnts_d,elems_d,m.numElems,flags_d);
-    CUDA_CALL(cudaMemcpy(flags,flags_d,m.numElems*sizeof(bool),cudaMemcpyDeviceToHost));
-    std::cout << inObj(flags,m.numElems) << std::endl;
-    CUDA_CALL(cudaFree(pnts_d));
-    CUDA_CALL(cudaFree(elems_d));
-    CUDA_CALL(cudaFree(flags_d));
-    delete[] flags;
-    delete[] dists;
+    cuFloatComplex *temp_h = new cuFloatComplex[5], *temp_d, *sum_d, sum = make_cuFloatComplex(0,0);
+    for(int i=0;i<5;i++) {
+        temp_h[i] = make_cuFloatComplex(i,i);
+    }
+    CUDA_CALL(cudaMalloc(&temp_d,5*sizeof(cuFloatComplex)));
+    CUDA_CALL(cudaMemcpy(temp_d,temp_h,5*sizeof(cuFloatComplex),cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMalloc(&sum_d,sizeof(cuFloatComplex)));
+    CUDA_CALL(cudaMemcpy(sum_d,&sum,sizeof(cuFloatComplex),cudaMemcpyHostToDevice));
+    int width = 32, numBlocks = (5+width-1)/width;
+    floatComplexAdd<<<numBlocks,width>>>(sum_d,temp_d,5);
+    CUDA_CALL(cudaMemcpy(&sum,sum_d,sizeof(cuFloatComplex),cudaMemcpyDeviceToHost));
+    std::cout << "sum: " << sum << std::endl;
+    CUDA_CALL(cudaFree(temp_d));
+    CUDA_CALL(cudaFree(sum_d));
+    free(temp_h);
     return EXIT_SUCCESS;
 }
 

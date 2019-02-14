@@ -15,7 +15,7 @@ mesh.o: mesh.cu mesh.h numerical.h
 GMRES.o: GMRES.cu GMRES.h
 	nvcc -arch=sm_60 -dc -std=c++11 GMRES.cu
 	
-atomicFuncs.o: atomicFuncs.cu atomicFuncs.h
+atomicFuncs.o: atomicFuncs.cu atomicFuncs.h numerical.h
 	nvcc -arch=sm_60 -dc -std=c++11 atomicFuncs.cu
 
 clean :

@@ -12,6 +12,7 @@
 #include<ctime>
 #include "mesh.h"
 #include "numerical.h"
+#include "atomicFuncs.h"
 
 //cartCoord class functions
 __host__ __device__ cartCoord::cartCoord(const cartCoord &rhs) {
@@ -883,7 +884,7 @@ int bemSystem(const mesh &m, const float k, const cartCoord *srcs, const int num
     for(i=0;i<m.numCHIEF;i++) {
         pnts[m.numPnts+i] = m.chiefPnts[i];
     }
-    HOST_CALL(genSystem(k,m.elems,m.numElems,pnts,m.numPnts,m.numCHIEF,srcs,
+    HOST_CALL(atomicGenSystem(k,m.elems,m.numElems,pnts,m.numPnts,m.numCHIEF,srcs,
             numSrcs,A,lda,B,ldb));
     delete[] pnts;
     CUDA_CALL(cudaFree(pnts_d));
