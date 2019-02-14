@@ -12,7 +12,7 @@ numerical.o : numerical.cu numerical.h mesh.h
 mesh.o: mesh.cu mesh.h numerical.h
 	nvcc -arch=sm_60 -dc -std=c++11 mesh.cu
 	
-GMRES.o: GMRES.cu GMRES.h
+GMRES.o: GMRES.cu GMRES.h numerical.h
 	nvcc -arch=sm_60 -dc -std=c++11 GMRES.cu
 	
 atomicFuncs.o: atomicFuncs.cu atomicFuncs.h numerical.h
