@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
     float k = 2*PI*f/343.21;
     mesh m;
     size_t fr, ttl;
-    m.readObj("sphere.obj");
+    m.readObj("KEMARTORSO_12000Hz.obj");
     m.findBB(0.0001);
     m.genCHIEF(1,0.001);
     std::cout << "CHIEF points generated." << std::endl;
