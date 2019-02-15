@@ -64,11 +64,15 @@ int main(int argc, char** argv) {
     cuFloatComplex *Q = new cuFloatComplex[(m.getNumPnts()+m.getNumChief())
             *(m.getNumPnts()+m.getNumChief())];
     t = clock();
+    /*
     HOST_CALL(lsqSolver(A,m.getNumPnts()+m.getNumChief(),m.getNumPnts(),
             m.getNumPnts()+m.getNumChief(),B,numSrcs,m.getNumPnts()+m.getNumChief(),Q));
+     */
+    HOST_CALL(qrSolver(A,m.getNumPnts()+m.getNumChief(),m.getNumPnts(),
+            m.getNumPnts()+m.getNumChief(),B,numSrcs,m.getNumPnts()+m.getNumChief()));
     t = clock()-t;
     printf("Elapsed %f seconds in solution of system.\n",((float)t)/CLOCKS_PER_SEC);
-    printComplexMatrix(B,m.getNumPnts(),numSrcs,m.getNumPnts()+m.getNumChief());
+    //printComplexMatrix(B,m.getNumPnts(),numSrcs,m.getNumPnts()+m.getNumChief());
     /*
     float radius = 3;
     float step = 0.2;

@@ -21,6 +21,7 @@
 #include <cuda_runtime.h>
 #include "device_launch_parameters.h"
 #include <cublas_v2.h>
+#include <cusolverDn.h>
 #include "mesh.h"
 #include <algorithm>
 #include <vector>
@@ -91,6 +92,29 @@ printf("There were problems with the parameters.\n");\
 }\
 if(x==CUBLAS_STATUS_MAPPING_ERROR) {\
 printf("There was an error accessing GPU memory.\n"); \
+}\
+return EXIT_FAILURE; } \
+}\
+while(0)
+#endif
+
+#ifndef CUSOLVER_CALL
+#define CUSOLVER_CALL(x) \
+do {\
+if((x)!=CUSOLVER_STATUS_SUCCESS)\
+{\
+printf("Error at %s:%d\n",__FILE__,__LINE__); \
+if((x)==CUSOLVER_STATUS_NOT_INITIALIZED) { \
+printf("The library was not initialized.\n"); \
+}\
+if((x)==CUSOLVER_STATUS_INVALID_VALUE) {\
+printf("Invalid parameters were passed.\n");\
+}\
+if((x)==CUSOLVER_STATUS_ARCH_MISMATCH) {\
+printf("Achitecture not supported.\n"); \
+}\
+if((x)==CUSOLVER_STATUS_INTERNAL_ERROR) {\
+printf("An internal operation failed.\n"); \
 }\
 return EXIT_FAILURE; } \
 }\
@@ -168,5 +192,8 @@ __host__ int lsqSolver(cuFloatComplex *A_h,const int m,const int n,const int lda
 
 int wrtCplxMat(const cuFloatComplex *mat,const int numRows,const int numCols,const int ldm,
         const char *file);
+
+int qrSolver(const cuFloatComplex *A, const int mA, const int nA, const int ldA, 
+        cuFloatComplex *B, const int nB, const int ldB);
 #endif /* NUMERICAL_H */
 

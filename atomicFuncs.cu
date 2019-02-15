@@ -13,52 +13,6 @@ __global__ void add(float *loc, float *temp, const int num) {
     }
 }
 
-/*
-__device__ void atomicFloatComplexAdd(cuFloatComplex *a, cuFloatComplex b) {
-    float *x = &(a->x);
-    float *y = &(a->y);
-    //use atomicAdd for float variables
-    atomicAdd(x,cuCrealf(b));
-    //printf("real added\n");
-    atomicAdd(y,cuCimagf(b));
-    //printf("imag added\n");
-}
-
-__device__ void atomicFloatComplexSub(cuFloatComplex *a, cuFloatComplex b) {
-    float *x = &(a->x);
-    float *y = &(a->y);
-    //use atomicAdd for float variables
-    atomicAdd(x,-cuCrealf(b));
-    atomicAdd(y,-cuCimagf(b));
-}
-
-__device__ void atomicDoubleComplexAdd(cuDoubleComplex *a, cuDoubleComplex b) {
-    double *x = &(a->x);
-    double *y = &(a->y);
-    //use atomicAdd for float variables
-    atomicAdd(x,cuCreal(b));
-    atomicAdd(y,cuCimag(b));
-}
-
-__device__ void atomicDoubleComplexSub(cuDoubleComplex *a, cuDoubleComplex b) {
-    double *x = &(a->x);
-    double *y = &(a->y);
-    //use atomicAdd for float variables
-    atomicAdd(x,-cuCreal(b));
-    atomicAdd(y,-cuCimag(b));
-}
-
-__device__ cuDoubleComplex cuFlt2cuDouble(const cuFloatComplex x) {
-    return make_cuDoubleComplex(cuCrealf(x),cuCimagf(x));
-}
-
-__global__ void floatComplexAdd(cuFloatComplex *a, cuFloatComplex *b, const int num) {
-    int idx = blockIdx.x*blockDim.x+threadIdx.x;
-    if(idx < num) {
-        atomicFloatComplexAdd(a,b[idx]);
-    }
-}
-*/
 __global__ void atomicPntsElems_nsgl(const float k, const cartCoord *pnts, const int numNods, 
         const int idxPntStart, const int idxPntEnd, const triElem *elems, const int numElems, 
         cuFloatComplex *A, const int lda, cuFloatComplex *B, const int numSrcs, const int ldb) {
