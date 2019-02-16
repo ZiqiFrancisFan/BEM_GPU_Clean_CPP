@@ -6,6 +6,7 @@
 #include "numerical.h"
 #include "mesh.h"
 #include "atomicFuncs.h"
+#include "warpAcceleration.h"
 
 //air density and speed of sound
 __constant__ float density = 1.2041;
@@ -23,6 +24,29 @@ __global__ void test(cartCoord *pnts, triElem *elems) {
 }
 
 int Test() {
+    float *d_in, *d_out, *h_in, *h_out;
+    h_in = new float[BDIMX];
+    h_out = new float[BDIMX];
+    CUDA_CALL(cudaMalloc(&d_in,BDIMX*sizeof(float)));
+    CUDA_CALL(cudaMalloc(&d_out,BDIMX*sizeof(float)));
+    
+    for(int i=0;i<BDIMX;i++) {
+        h_in[i] = (float)i;
+    }
+    
+    CUDA_CALL(cudaMemcpy(d_in,h_in,BDIMX*sizeof(float),cudaMemcpyHostToDevice));
+    test_shfl_xor<<<1,BDIMX>>>(d_out,d_in,1);
+    
+    CUDA_CALL(cudaMemcpy(h_out,d_out,BDIMX*sizeof(float),cudaMemcpyDeviceToHost));
+    
+    for(int i=0;i<BDIMX;i++) {
+        std::cout << h_out[i] << " ";
+    }
+    std::cout << std::endl;
+    CUDA_CALL(cudaFree(d_in));
+    CUDA_CALL(cudaFree(d_out));
+    free(h_in);
+    free(h_out);
     
     return EXIT_SUCCESS;
 }

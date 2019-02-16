@@ -39,7 +39,8 @@ OBJECTFILES= \
 	${OBJECTDIR}/atomicFuncs.o \
 	${OBJECTDIR}/main.o \
 	${OBJECTDIR}/mesh.o \
-	${OBJECTDIR}/numerical.o
+	${OBJECTDIR}/numerical.o \
+	${OBJECTDIR}/warpAcceleration.o
 
 
 # C Compiler Flags
@@ -90,6 +91,11 @@ ${OBJECTDIR}/numerical.o: numerical.cu
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/numerical.o numerical.cu
+
+${OBJECTDIR}/warpAcceleration.o: warpAcceleration.cu
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/warpAcceleration.o warpAcceleration.cu
 
 # Subprojects
 .build-subprojects:
