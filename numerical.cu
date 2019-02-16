@@ -35,7 +35,7 @@ int Test() {
     }
     
     CUDA_CALL(cudaMemcpy(d_in,h_in,BDIMX*sizeof(float),cudaMemcpyHostToDevice));
-    test_shfl_xor<<<1,BDIMX>>>(d_out,d_in,1);
+    test_shfl_broadcast<<<1,BDIMX>>>(d_out,d_in,1);
     
     CUDA_CALL(cudaMemcpy(h_out,d_out,BDIMX*sizeof(float),cudaMemcpyDeviceToHost));
     

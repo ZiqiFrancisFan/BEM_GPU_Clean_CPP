@@ -18,6 +18,10 @@
 #define BDIMX 32
 #endif
 
+#ifndef SMEMDIM
+#define SMEMDIM 32
+#endif
+
 #include <cuComplex.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
