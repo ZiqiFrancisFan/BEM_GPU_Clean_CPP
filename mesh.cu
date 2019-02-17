@@ -214,6 +214,39 @@ __device__ void h_l_nsgl(const float k, const cartCoord x, const cartCoord p1,
     }
 }
 
+__device__ cuFloatComplex h_l_1_nsgl(const float k, const int xIdx, const int nod1, 
+        const int nod2, const int nod3, const cartCoord *pnts) {
+    //Declaration of variables
+    cuFloatComplex hCoeff = make_cuFloatComplex(0,0), g;
+    float eta1, eta2, xi1, xi2, rho, theta, vertCrossProd, N1, temp;
+    cartCoord y, crossProd, normal;
+    int n, m;
+    
+    //Computation of normal and jacobian of the first transform
+    crossProd = (pnts[nod1]-pnts[nod3])*(pnts[nod2]-pnts[nod3]);
+    vertCrossProd = crossProd.nrm2();
+    normal = crossProd.nrmlzd();
+    
+    //Accumulate the sum
+    for(n=0;n<INTORDER;n++) {
+        eta2 = INTPNTS[n];
+        for(m=0;m<INTORDER;m++) {
+            eta1 = INTPNTS[m];
+            rho = 0.5+0.5*eta1;
+            theta = 0.5+0.5*eta2;
+            xi1 = rho*(1-theta);
+            xi2 = rho*theta;
+            N1 = N_1(cartCoord2D(xi1,xi2));
+            y = xiToElem(pnts[nod1],pnts[nod2],pnts[nod3],cartCoord2D(xi1,xi2));
+            g = pGpn2(k,normal,pnts[xIdx],y);
+            temp = 0.25*INTWGTS[n]*INTWGTS[m]*rho*vertCrossProd*N1;
+            hCoeff = cuCaddf(hCoeff,make_cuFloatComplex(temp*cuCrealf(g),
+                    temp*cuCimagf(g)));
+        }
+    }
+    return hCoeff;
+}
+
 __device__ void g_l_sgl1(const float k, const cartCoord x, const cartCoord p1, 
         const cartCoord p2, const cartCoord p3, cuFloatComplex *gCoeff1, 
         cuFloatComplex *gCoeff2, cuFloatComplex *gCoeff3) {
@@ -1417,6 +1450,7 @@ int mesh::meshToGPU(cartCoord **pPnts_d, triElem **pElems_d) const {
     }
 }
 
+//nodElems
 nodElems::nodElems(const nodElems &rhs) {
     nodNum = rhs.nodNum;
     numElems = rhs.numElems;
@@ -1440,6 +1474,55 @@ nodElems& nodElems::operator=(const nodElems &rhs) {
     }
     return *this;
 }
+
+void nodElems::findElems(const mesh &m, const int nod) {
+    int i, j;
+    triElem elem;
+    bool *flags = new bool[m.getNumElems()];
+    for(i=0;i<m.getNumElems();i++) {
+        flags[i] = false;
+    }
+    
+    //Find the elements that contribute to node 
+    numElems = 0;
+    for(i=0;i<m.getNumElems();i++) {
+        if(m.elems[i].nodes[0]==nod||m.elems[i].nodes[1]==nod||m.elems[i].nodes[2]==nod) {
+            flags[i] = true;
+            numElems++;
+        }
+    }
+    
+    //create the elems array
+    if(elems!=NULL) {
+        delete[] elems;
+    }
+    elems = new triElem[numElems];
+    j = 0;
+    for(i=0;i<m.getNumElems();i++) {
+        if(flags[i]) {
+            if(m.elems[i].nodes[0]!=nod) {
+                elem.bc[0] = m.elems[i].bc[0];
+                elem.bc[1] = m.elems[i].bc[1];
+                elem.bc[2] = m.elems[i].bc[2];
+                if(m.elems[i].nodes[1]==nod) {
+                    //nod is the second node on the element
+                    elem.nodes[0] = m.elems[i].nodes[1];
+                    elem.nodes[1] = m.elems[i].nodes[2];
+                    elem.nodes[2] = m.elems[i].nodes[0];
+                } else {
+                    //nod is the third node on the element
+                    elem.nodes[0] = m.elems[i].nodes[2];
+                    elem.nodes[1] = m.elems[i].nodes[0];
+                    elem.nodes[2] = m.elems[i].nodes[1];
+                }
+            } else {
+                elem = m.elems[i];
+            }
+            elems[j] = m.elems[i];
+            j++;
+        }
+    }
+} 
 
 //cartCoord2D
 __host__ __device__ cartCoord2D::cartCoord2D(const cartCoord2D &rhs) {

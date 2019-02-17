@@ -137,6 +137,9 @@ __device__ cuFloatComplex pntElemOffset(const float k,const cartCoord x,const tr
 class triElem {
     friend std::ostream& operator<<(std::ostream&,const triElem&);
     
+    friend __device__ cuFloatComplex h_l_1_nsgl(const float k, const int xIdx, const int nod1, 
+        const int nod2, const int nod3, const cartCoord *pnts);
+    
     friend __global__ void test(cartCoord *pnts, triElem *elems);
     
     friend __global__ void rayTrnglsInt(const cartCoord,const cartCoord,
@@ -177,6 +180,8 @@ class triElem {
         const int numSrcs, const int ldb);
     
     friend class mesh;
+    
+    friend class nodElems;
 private:
     int nodes[3];
     cuFloatComplex bc[3];
@@ -205,6 +210,8 @@ class mesh {
     friend float cmptSurfArea(const mesh &m);
     
     friend int Test();
+    
+    friend class nodElems;
     
 private:
     cartCoord *pnts = NULL;
@@ -253,7 +260,7 @@ public:
     nodElems(const nodElems&);
     nodElems& operator=(const nodElems&);
     ~nodElems() {delete[] elems;}
-    cmptNodElems(const mesh &m, const int nod);
+    void findElems(const mesh &m, const int nod);
 };
 
 class cartCoord2D {
@@ -353,6 +360,9 @@ __device__ void g_l_nsgl(const float k, const cartCoord x, const cartCoord p1,
 __device__ void h_l_nsgl(const float k, const cartCoord x, const cartCoord p1, 
         const cartCoord p2, const cartCoord p3, cuFloatComplex *pCoeff1, 
         cuFloatComplex *pCoeff2, cuFloatComplex *pCoeff3);
+
+__device__ cuFloatComplex h_l_1_nsgl(const float k, const int xIdx, const int nod1, 
+        const int nod2, const int nod3, const cartCoord *pnts);
 
 __device__ void g_l_sgl1(const float k, const cartCoord x, const cartCoord p1, 
         const cartCoord p2, const cartCoord p3, cuFloatComplex *pCoeff1, 
