@@ -242,6 +242,20 @@ __global__ void rayTrnglsInt(const cartCoord*,const triElem*,bool*);
 
 float cmptSurfArea(const mesh &m);
 
+//The elements that contribute to the pressure of a node
+class nodElems {
+private:
+    int nodNum = 0;
+    int numElems = 0;
+    triElem *elems = NULL;
+public:
+    nodElems() = default;
+    nodElems(const nodElems&);
+    nodElems& operator=(const nodElems&);
+    ~nodElems() {delete[] elems;}
+    cmptNodElems(const mesh &m, const int nod);
+};
+
 class cartCoord2D {
     friend __host__ __device__ cartCoord2D numDvd(const cartCoord2D&,const float);
     friend __host__ __device__ cartCoord2D numMul(const float,const cartCoord2D&);

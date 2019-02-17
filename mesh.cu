@@ -1417,6 +1417,30 @@ int mesh::meshToGPU(cartCoord **pPnts_d, triElem **pElems_d) const {
     }
 }
 
+nodElems::nodElems(const nodElems &rhs) {
+    nodNum = rhs.nodNum;
+    numElems = rhs.numElems;
+    elems = new triElem[numElems];
+    for(int i=0;i<numElems;i++) {
+        elems[i] = rhs.elems[i];
+    }
+}
+
+nodElems& nodElems::operator=(const nodElems &rhs) {
+    nodNum = rhs.nodNum;
+    numElems = rhs.numElems;
+    if(elems!=NULL) {
+        delete[] elems;
+    }
+    if(numElems != 0) {
+        elems = new triElem[numElems];
+        for(int i=0;i<numElems;i++) {
+            elems[i] = rhs.elems[i];
+        }
+    }
+    return *this;
+}
+
 //cartCoord2D
 __host__ __device__ cartCoord2D::cartCoord2D(const cartCoord2D &rhs) {
     coords[0] = rhs.coords[0];
