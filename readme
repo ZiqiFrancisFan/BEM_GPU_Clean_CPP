@@ -1,0 +1,5 @@
+The input of the program is an obj mesh. Line 29 in main.cpp is the place where the mesh is read from the disk.
+
+The atomicAcceleration.cu contains the code for atomic speedup. atomicGenSystem_test is the function used currently to generate the linear system. Line 490 is the place where you can switch between the atomic mode or parallel mode. Functions without the suffix "test" are atomic functions and functions with the suffix are parallel functions. 
+
+mesh.cu contains the mesh related functions and the basic functions for generating integrations. h_l_nsgl corresponds to the integral of the nonsingular function h in the pdf. Similarly, h_l_sgl corresponds to the integral of the singular function h in the pdf. Same rules apply to the function g in the pdf. 

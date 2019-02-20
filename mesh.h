@@ -179,6 +179,14 @@ class triElem {
         const int numElems, cuFloatComplex *A, const int lda, cuFloatComplex *B, 
         const int numSrcs, const int ldb);
     
+    friend __global__ void atomicPntsElems_nsgl_test(const float k, const cartCoord *pnts, const int numNods, 
+        const int idxPntStart, const int idxPntEnd, const triElem *elems, const int numElems, 
+        cuFloatComplex *A, const int lda, cuFloatComplex *B, const int numSrcs, const int ldb);
+    
+    friend __global__ void atomicPntsElems_sgl_test(const float k, const cartCoord *pnts, const triElem *elems, 
+        const int numElems, cuFloatComplex *A, const int lda, cuFloatComplex *B, 
+        const int numSrcs, const int ldb);
+    
     friend class mesh;
     
     friend class nodElems;

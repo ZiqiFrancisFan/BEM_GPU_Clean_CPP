@@ -579,6 +579,9 @@ int wrtCplxMat(const cuFloatComplex *mat, const int numRows, const int numCols,
 
 int qrSolver(const cuFloatComplex *A, const int mA, const int nA, const int ldA, 
         cuFloatComplex *B, const int nB, const int ldB) {
+    cudaEvent_t start, stop;
+    CUDA_CALL(cudaEventCreate(&start));
+    CUDA_CALL(cudaEventCreate(&stop));
     cusolverDnHandle_t cusolverH = NULL;
     CUSOLVER_CALL(cusolverDnCreate(&cusolverH));
     
@@ -602,23 +605,15 @@ int qrSolver(const cuFloatComplex *A, const int mA, const int nA, const int ldA,
     int *deviceInfo_d, deviceInfo;
     CUDA_CALL(cudaMalloc(&deviceInfo_d,sizeof(int)));
     
+    CUDA_CALL(cudaEventRecord(start));
     CUSOLVER_CALL(cusolverDnCgeqrf(cusolverH,mA,nA,A_d,ldA,tau_d,workspace_d,lwork,
             deviceInfo_d));
     CUDA_CALL(cudaMemcpy(&deviceInfo,deviceInfo_d,sizeof(int),cudaMemcpyDeviceToHost));
-    if(deviceInfo!=0) {
-        std::cout << "Failed in performing QR." << std::endl;
-        return EXIT_FAILURE;
-    }
     
     //B = (Q^H)*B
     CUSOLVER_CALL(cusolverDnCunmqr(cusolverH,CUBLAS_SIDE_LEFT,CUBLAS_OP_C,mA,nB,
             nA,A_d,ldA,tau_d,B_d,ldB,workspace_d,lwork,deviceInfo_d));
     CUDA_CALL(cudaMemcpy(&deviceInfo,deviceInfo_d,sizeof(int),cudaMemcpyDeviceToHost));
-    if(deviceInfo!=0) {
-        std::cout << "Failed in performing B=(Q^H)B." << std::endl;
-        std::cout << "i = " << deviceInfo << std::endl;
-        return EXIT_FAILURE;
-    }
     
     //Solve Rx = B
     cuFloatComplex alpha = make_cuFloatComplex(1,0);
@@ -626,9 +621,17 @@ int qrSolver(const cuFloatComplex *A, const int mA, const int nA, const int ldA,
     CUBLAS_CALL(cublasCreate_v2(&cublasH));
     CUBLAS_CALL(cublasCtrsm_v2(cublasH,CUBLAS_SIDE_LEFT,CUBLAS_FILL_MODE_UPPER,
             CUBLAS_OP_N,CUBLAS_DIAG_NON_UNIT,nA,nB,&alpha,A_d,ldA,B_d,ldB));
+    CUDA_CALL(cudaEventRecord(stop));
     
     CUDA_CALL(cudaMemcpy(B,B_d,ldB*nB*sizeof(cuFloatComplex),cudaMemcpyDeviceToHost));
+    CUDA_CALL(cudaEventSynchronize(stop));
     
+    float milliseconds = 0;
+    CUDA_CALL(cudaEventElapsedTime(&milliseconds, start, stop));
+    std::cout << "Elapsed time in system solution: " << milliseconds << " milliseconds" 
+            << std::endl;
+    CUDA_CALL(cudaEventDestroy(start));
+    CUDA_CALL(cudaEventDestroy(stop));
     CUDA_CALL(cudaFree(A_d));
     CUDA_CALL(cudaFree(B_d));
     CUDA_CALL(cudaFree(tau_d));

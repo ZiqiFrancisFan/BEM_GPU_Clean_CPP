@@ -12,6 +12,7 @@
             <file>file:/media/ziqi/HardDisk/Lab/BEM_GPU_Clean_CPP/numerical.cu</file>
             <file>file:/media/ziqi/HardDisk/Lab/BEM_GPU_Clean_CPP/atomicFuncs.cu</file>
             <file>file:/media/ziqi/HardDisk/Lab/BEM_GPU_Clean_CPP/main.cpp</file>
+            <file>file:/media/ziqi/HardDisk/Lab/BEM_GPU_Clean_CPP/mesh.h</file>
             <file>file:/media/ziqi/HardDisk/Lab/BEM_GPU_Clean_CPP/Makefile</file>
             <file>file:/media/ziqi/HardDisk/Lab/BEM_GPU_Clean_CPP/numerical.h</file>
         </group>

@@ -37,7 +37,18 @@ int atomicGenSystem(const float k, const triElem *elems, const int numElems,
         const cartCoord *srcs, const int numSrcs, cuFloatComplex *A, const int lda, 
         cuFloatComplex *B, const int ldb);
 
+__global__ void atomicPntsElems_nsgl_test(const float k, const cartCoord *pnts, const int numNods, 
+        const int idxPntStart, const int idxPntEnd, const triElem *elems, const int numElems, 
+        cuFloatComplex *A, const int lda, cuFloatComplex *B, const int numSrcs, const int ldb);
 
+__global__ void atomicPntsElems_sgl_test(const float k, const cartCoord *pnts, const triElem *elems, 
+        const int numElems, cuFloatComplex *A, const int lda, cuFloatComplex *B, 
+        const int numSrcs, const int ldb);
+
+int atomicGenSystem_test(const float k, const triElem *elems, const int numElems, 
+        const cartCoord *pnts, const int numNods, const int numCHIEF, 
+        const cartCoord *srcs, const int numSrcs, cuFloatComplex *A, const int lda, 
+        cuFloatComplex *B, const int ldb);
 
 #endif /* ATOMICFUNCS_H */
 
