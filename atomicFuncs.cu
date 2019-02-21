@@ -66,6 +66,56 @@ __global__ void atomicPntsElems_nsgl(const float k, const cartCoord *pnts, const
     }
 }
 
+__global__ void atomicPntsElems_g_h_c_nsgl(const float k, const cartCoord *pnts, const int numNods, 
+        const int idxPntStart, const int idxPntEnd, const triElem *elems, const int numElems, 
+        cuFloatComplex *A, const int lda, cuFloatComplex *B, const int numSrcs, const int ldb) {
+    int xIdx = blockIdx.x*blockDim.x+threadIdx.x; //Index for points
+    int yIdx = blockIdx.y*blockDim.y+threadIdx.y; //Index for elements
+    //The thread with indices xIdx and yIdx process the point xIdx and elem yIdx
+    if(xIdx>=idxPntStart && xIdx<=idxPntEnd && yIdx<numElems && xIdx!=elems[yIdx].nodes[0] 
+            && xIdx!=elems[yIdx].nodes[1] && xIdx!=elems[yIdx].nodes[2]) {
+        int i, j;
+        cuFloatComplex hCoeffs[3], gCoeffs[3], bc, pCoeffs[3], temp;
+        float cCoeff;
+        cartCoord triNod[3];
+        triNod[0] = pnts[elems[yIdx].nodes[0]];
+        triNod[1] = pnts[elems[yIdx].nodes[1]];
+        triNod[2] = pnts[elems[yIdx].nodes[2]];
+        g_h_c_l_nsgl(k,pnts[xIdx],triNod,gCoeffs,hCoeffs,&cCoeff);
+        
+        //Update the A matrix
+        bc = cuCdivf(elems[yIdx].bc[0],elems[yIdx].bc[1]);
+        for(i=0;i<3;i++) {
+            pCoeffs[i] = cuCsubf(hCoeffs[i],cuCmulf(bc,gCoeffs[i]));
+        }
+        
+        for(i=0;i<3;i++) {
+            //atomicFloatComplexAdd(&A[IDXC0(xIdx,elems[yIdx].nodes[i],lda)],pCoeffs[i]);
+            atomicAdd(&A[IDXC0(xIdx,elems[yIdx].nodes[i],lda)].x,cuCrealf(pCoeffs[i]));
+            atomicAdd(&A[IDXC0(xIdx,elems[yIdx].nodes[i],lda)].y,cuCimagf(pCoeffs[i]));
+        }
+        
+        //Update from C coefficients
+        if(xIdx<numNods) {
+            //atomicFloatComplexSub(&A[IDXC0(xIdx,xIdx,lda)],make_cuFloatComplex(cCoeff,0));
+            atomicAdd(&A[IDXC0(xIdx,xIdx,lda)].x,-cCoeff);
+        }
+        
+        //Update the B matrix
+        bc = cuCdivf(elems[yIdx].bc[2],elems[yIdx].bc[1]);
+        //printf("bc: \n");
+        //printComplexMatrix(&bc,1,1,1);
+        for(i=0;i<numSrcs;i++) {
+            for(j=0;j<3;j++) {
+                //atomicFloatComplexSub(&B[IDXC0(xIdx,i,ldb)],cuCmulf(bc,gCoeffs[j]));
+                temp = cuCmulf(bc,gCoeffs[j]);
+                atomicAdd(&B[IDXC0(xIdx,i,ldb)].x,-cuCrealf(temp));
+                atomicAdd(&B[IDXC0(xIdx,i,ldb)].y,-cuCimagf(temp));
+            }
+        }
+    }
+}
+
 __global__ void atomicPntsElems_sgl(const float k, const cartCoord *pnts, const triElem *elems, 
         const int numElems, cuFloatComplex *A, const int lda, cuFloatComplex *B, 
         const int numSrcs, const int ldb) {
@@ -225,8 +275,10 @@ int atomicGenSystem(const float k, const triElem *elems, const int numElems,
     
     //std::cout << "Number of blocks: " << numBlocks << std::endl;
     cudaEventRecord(start);
-    atomicPntsElems_nsgl<<<gridLayout,blockLayout>>>(k,pnts_d,numNods,0,numNods+numCHIEF-1,
+    atomicPntsElems_g_h_c_nsgl<<<gridLayout,blockLayout>>>(k,pnts_d,numNods,0,numNods+numCHIEF-1,
             elems_d,numElems,A_d,lda,B_d,numSrcs,ldb);
+    //atomicPntsElems_nsgl<<<gridLayout,blockLayout>>>(k,pnts_d,numNods,0,numNods+numCHIEF-1,
+    //        elems_d,numElems,A_d,lda,B_d,numSrcs,ldb);
     
     atomicPntsElems_sgl<<<yNumBlocks,yWidth>>>(k,pnts_d,elems_d,numElems,A_d,lda,
             B_d,numSrcs,ldb);

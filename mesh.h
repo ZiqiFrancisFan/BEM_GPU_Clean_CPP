@@ -68,6 +68,9 @@ class cartCoord {
     
     friend __host__ __device__ float pPsiLpn2(const cartCoord,const cartCoord,const cartCoord);
     
+    friend __device__ void g_h_c_l_nsgl(const float &k, const cartCoord &x, const cartCoord p[3], 
+        cuFloatComplex gCoeff[3], cuFloatComplex hCoeff[3], float* cCoeff);
+    
     friend __device__ cuFloatComplex pntElemOffset(const float k,const cartCoord x,const triElem elem,
         const cartCoord *pnts,const cuFloatComplex *surfPressure);
     
@@ -172,6 +175,10 @@ class triElem {
         float *area);
     
     friend __global__ void atomicPntsElems_nsgl(const float k, const cartCoord *pnts, const int numNods, 
+        const int idxPntStart, const int idxPntEnd, const triElem *elems, const int numElems, 
+        cuFloatComplex *A, const int lda, cuFloatComplex *B, const int numSrcs, const int ldb);
+    
+    friend __global__ void atomicPntsElems_g_h_c_nsgl(const float k, const cartCoord *pnts, const int numNods, 
         const int idxPntStart, const int idxPntEnd, const triElem *elems, const int numElems, 
         cuFloatComplex *A, const int lda, cuFloatComplex *B, const int numSrcs, const int ldb);
     
@@ -407,6 +414,9 @@ __device__ void c_l_sgl2(const float k, const cartCoord x, const cartCoord p1,
 
 __device__ void c_l_sgl3(const float k, const cartCoord x, const cartCoord p1, 
         const cartCoord p2, const cartCoord p3, float *cCoeff);
+
+__device__ void g_h_c_l_nsgl(const float &k, const cartCoord &x, const cartCoord p[3], 
+        cuFloatComplex gCoeff[3], cuFloatComplex hCoeff[3], float* cCoeff);
 
 __global__ void pntElemsOffset(const float k, const cartCoord x, const triElem *elems, 
         const int numElems, const cartCoord *pnts, const cuFloatComplex *surfPressure, 

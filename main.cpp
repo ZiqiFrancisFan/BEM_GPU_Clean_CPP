@@ -26,10 +26,12 @@ int main(int argc, char** argv) {
     float k = 2*PI*f/343.21;
     mesh m;
     size_t fr, ttl;
-    m.readObj("Head_20kHz.obj");
+    std::cout << "started" << std::endl;
+    m.readObj("sphere.obj");
     m.findBB(0.0001);
-    m.genCHIEF(20,0.0001);
+    m.genCHIEF(1,0.1);
     std::cout << "CHIEF points generated." << std::endl;
+    //std::cout << m << std::endl;
     //m.printCHIEF();
     gaussQuad gss(INTORDER);
     gss.sendToDevice();
@@ -53,9 +55,9 @@ int main(int argc, char** argv) {
     HOST_CALL(bemSystem(m,k,&src,numSrcs,A,(m.getNumPnts()+m.getNumChief()),B,
             (m.getNumPnts()+m.getNumChief())));
     
-    std::cout << "A: " << std::endl;
+    //std::cout << "A: " << std::endl;
     //printComplexMatrix(A,m.getNumPnts()+m.getNumChief(),m.getNumPnts(),m.getNumPnts()+m.getNumChief());
-    std::cout << "B: " << std::endl;
+    //std::cout << "B: " << std::endl;
     //printComplexMatrix(B,m.getNumPnts()+m.getNumChief(),numSrcs,m.getNumPnts()+m.getNumChief());
     
     //CUDA_CALL(cudaDeviceSynchronize());
@@ -68,7 +70,7 @@ int main(int argc, char** argv) {
             m.getNumPnts()+m.getNumChief(),B,numSrcs,m.getNumPnts()+m.getNumChief()));
     
     
-    //printComplexMatrix(B,m.getNumPnts(),numSrcs,m.getNumPnts()+m.getNumChief());
+    printComplexMatrix(B,m.getNumPnts(),numSrcs,m.getNumPnts()+m.getNumChief());
     /*
     float radius = 3;
     float step = 0.2;

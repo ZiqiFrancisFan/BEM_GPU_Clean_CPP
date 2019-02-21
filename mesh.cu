@@ -13,6 +13,7 @@
 #include "mesh.h"
 #include "numerical.h"
 #include "atomicFuncs.h"
+#include "GMRES.h"
 
 //cartCoord class functions
 __host__ __device__ cartCoord::cartCoord(const cartCoord &rhs) {
@@ -86,7 +87,7 @@ __host__ __device__ cartCoord numMul(const float lambda, const cartCoord &pnt) {
 }
 
 __host__ __device__ float cartCoord::nrm2() const {
-    return sqrtf(powf(coords[0],2)+powf(coords[1],2)+powf(coords[2],2));
+    return sqrtf(coords[0]*coords[0]+coords[1]*coords[1]+coords[2]*coords[2]);
 }
 
 __host__ __device__ float r(const cartCoord p1, const cartCoord p2) {
@@ -172,6 +173,7 @@ __device__ void g_l_nsgl(const float k, const cartCoord x, const cartCoord p1,
                     temp[3]*cuCrealf(g)));
         }
     }
+    printComplexMatrix(gCoeff1,1,1,1);
 }
 
 __device__ void h_l_nsgl(const float k, const cartCoord x, const cartCoord p1, 
@@ -212,6 +214,7 @@ __device__ void h_l_nsgl(const float k, const cartCoord x, const cartCoord p1,
                     temp[3]*cuCimagf(g)));
         }
     }
+    //printComplexMatrix(hCoeff1,1,1,1);
 }
 
 __device__ cuFloatComplex h_l_1_nsgl(const float k, const int xIdx, const int nod1, 
@@ -589,6 +592,83 @@ __device__ void c_l_sgl3(const float k, const cartCoord x, const cartCoord p1,
             *cCoeff += temp*psi;
         }
     }
+}
+
+__device__ void g_h_c_l_nsgl(const float &k, const cartCoord &x, const cartCoord p[3], 
+        cuFloatComplex gCoeff[3], cuFloatComplex hCoeff[3], float *cCoeff) {
+    //Initalization of g, h and c
+    //printf("(%f,%f,%f)\n",p[0].coords[0],p[0].coords[1],p[0].coords[2]);
+    for(int i=0;i<3;i++) {
+        gCoeff[i] = make_cuFloatComplex(0,0);
+        hCoeff[i] = make_cuFloatComplex(0,0);
+    }
+    *cCoeff = 0;
+    
+    //Local variables
+    float eta1, eta2, wn, wm, xi1, xi2, rho, theta, vertCrossProd, N1, N2, N3, temp, 
+            temp_gh[3], omega = k*speed, pPsiLpn2, radius, prpn2;
+    cartCoord y, crossProd, normal, rVec;
+    cuFloatComplex Psi, pPsipn2;
+    crossProd = (p[0]-p[2])*(p[1]-p[2]);
+    //printf("(%f,%f,%f)\n",crossProd.coords[0],crossProd.coords[1],crossProd.coords[2]);
+    vertCrossProd = sqrtf((crossProd.coords[0]*crossProd.coords[0])
+            +(crossProd.coords[1]*crossProd.coords[1])+(crossProd.coords[2]*crossProd.coords[2]));
+    //printf("vert: %f\n",vertCrossProd);
+    normal = crossProd.nrmlzd();
+    //printf("normal=(%f,%f,%f)\n",normal.coords[0],normal.coords[1],normal.coords[2]);
+    const float prodRhoOmega = density*omega;
+    const float fourPI = 4.0f*PI;
+    //printf("density*omega = %f\n",prodRhoOmega);
+    //Compute integrals for g, h and c
+    for(int n=0;n<INTORDER;n++) {
+        eta2 = INTPNTS[n];
+        wn = INTWGTS[n];
+        theta = 0.5f+0.5f*eta2;
+        for(int m=0;m<INTORDER;m++) {
+            eta1 = INTPNTS[m];
+            wm = INTWGTS[m];
+            rho = 0.5f+0.5f*eta1;
+            temp = 0.25f*wn*wm*rho*vertCrossProd;
+            
+            xi1 = rho*(1-theta);
+            xi2 = rho-xi1;
+            //printf("xi1 = %f, xi2 = %f\n",xi1,xi2);
+            y = xiToElem(p[0],p[1],p[2],cartCoord2D(xi1,xi2));
+            //printf("x: (%f,%f,%f), y: (%f,%f,%f)\n",x.coords[0],x.coords[1],x.coords[2],
+            //        y.coords[0],y.coords[1],y.coords[2]);
+            rVec = y-x;
+            radius = sqrtf(rVec.coords[0]*rVec.coords[0]+rVec.coords[1]*rVec.coords[1]+rVec.coords[2]*rVec.coords[2]);
+            //printf("radius = %f\n",radius);
+            prpn2 = ((y.coords[0]-x.coords[0])*normal.coords[0]+(y.coords[1]-x.coords[1])*normal.coords[1]
+                    +(y.coords[2]-x.coords[2])*normal.coords[2])/radius;
+            //printf("prpn2=%f\n",prpn2);
+            pPsiLpn2 = -1.0f/fourPI/(radius*radius)*prpn2;
+            //printf("%f\n",pPsiLpn2);
+            Psi = make_cuFloatComplex(__cosf(-k*radius)/(fourPI*radius),__sinf(-k*radius)/(fourPI*radius));
+            pPsipn2 = cuCmulf(Psi,make_cuFloatComplex(-1.0f/radius,-k));
+            pPsipn2 = make_cuFloatComplex(prpn2*cuCrealf(pPsipn2),prpn2*cuCimagf(pPsipn2));
+            N1 = xi1;
+            N2 = xi2;
+            N3 = 1.0f-xi1-xi2;
+            temp_gh[0] = temp*N1;
+            temp_gh[1] = temp*N2;
+            temp_gh[2] = temp*N3;
+            
+            gCoeff[0] = cuCaddf(gCoeff[0],make_cuFloatComplex(temp_gh[0]*cuCrealf(Psi),temp_gh[0]*cuCimagf(Psi)));
+            gCoeff[1] = cuCaddf(gCoeff[1],make_cuFloatComplex(temp_gh[1]*cuCrealf(Psi),temp_gh[1]*cuCimagf(Psi)));
+            gCoeff[2] = cuCaddf(gCoeff[2],make_cuFloatComplex(temp_gh[2]*cuCrealf(Psi),temp_gh[2]*cuCimagf(Psi)));
+            
+            hCoeff[0] = cuCaddf(hCoeff[0],make_cuFloatComplex(temp_gh[0]*cuCrealf(pPsipn2),temp_gh[0]*cuCimagf(pPsipn2)));
+            hCoeff[1] = cuCaddf(hCoeff[1],make_cuFloatComplex(temp_gh[1]*cuCrealf(pPsipn2),temp_gh[1]*cuCimagf(pPsipn2)));
+            hCoeff[2] = cuCaddf(hCoeff[2],make_cuFloatComplex(temp_gh[2]*cuCrealf(pPsipn2),temp_gh[2]*cuCimagf(pPsipn2)));
+            
+            *cCoeff += temp*pPsiLpn2;
+        }
+    }
+    gCoeff[0] = make_cuFloatComplex(-prodRhoOmega*cuCimagf(gCoeff[0]),prodRhoOmega*cuCrealf(gCoeff[0]));
+    gCoeff[1] = make_cuFloatComplex(-prodRhoOmega*cuCimagf(gCoeff[1]),prodRhoOmega*cuCrealf(gCoeff[1]));
+    gCoeff[2] = make_cuFloatComplex(-prodRhoOmega*cuCimagf(gCoeff[2]),prodRhoOmega*cuCrealf(gCoeff[2]));
+    //printComplexMatrix(gCoeff,1,1,1);
 }
 
 //singular not dealt with in this function
